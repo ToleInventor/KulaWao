@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+<title>Atlas Capture</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif}
+
+body{
+  background:#f3f4f6;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  padding:40px 10px;
+}
+
+.wrapper{max-width:420px;width:100%}
+
+.header{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+  margin-bottom:18px;
+}
+.header span{font-weight:600;font-size:18px}
+
+.card{
+  background:#fff;
+  border-radius:22px;
+  padding:28px 22px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.08);
+}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:#eef2ff;
+  color:#4f46e5;
+  padding:5px 10px;
+  border-radius:999px;
+  font-size:12px;
+  margin-bottom:14px;
+}
+
+h1{
+  font-size:22px;
+  text-align:center;
+  font-weight:700;
+  line-height:1.3;
+  margin-bottom:10px;
+}
+.highlight{color:#2563eb}
+
+.desc{
+  text-align:center;
+  color:#6b7280;
+  font-size:13px;
+  margin-bottom:18px;
+  line-height:1.5;
+}
+
+.stats{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:18px;
+}
+.stat{text-align:center}
+.stat strong{color:#2563eb;font-size:16px}
+.stat span{font-size:11px;color:#6b7280}
+
+.features{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px 8px;
+  margin-bottom:16px;
+}
+.feature{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+}
+.icon{
+  width:28px;height:28px;
+  background:#eef2ff;
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.icon svg{
+  width:14px;height:14px;
+  stroke:#2563eb;
+  stroke-width:1.5;
+}
+
+.checks{
+  display:flex;
+  justify-content:space-between;
+  font-size:12px;
+  color:#059669;
+  margin-bottom:18px;
+}
+
+label{font-size:12px;color:#374151;font-weight:500;margin-bottom:4px;display:block}
+input{
+  width:100%;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid #e5e7eb;
+  font-size:14px;
+  margin-bottom:14px;
+}
+input:focus{
+  outline:none;
+  border-color:#4f46e5;
+  box-shadow:0 0 0 3px rgba(79,70,229,0.1);
+}
+input.error{
+  border-color:#ef4444;
+}
+
+.checkbox{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  margin-bottom:18px;
+}
+.checkbox input{
+  width:16px;
+  height:16px;
+  margin:0;
+}
+
+button{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:none;
+  background:linear-gradient(90deg,#2563eb,#7c3aed);
+  color:#fff;
+  font-weight:600;
+  font-size:14px;
+  cursor:pointer;
+  transition:all 0.2s;
+  margin-bottom:14px;
+}
+button:hover:not(:disabled){
+  transform:translateY(-1px);
+  box-shadow:0 4px 12px rgba(37,99,235,0.3);
+}
+button:disabled{
+  opacity:0.7;
+  cursor:not-allowed;
+  transform:none;
+}
+.button-loading{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.spinner{
+  width:16px;
+  height:16px;
+  border:2px solid rgba(255,255,255,0.3);
+  border-top-color:white;
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{
+  to{transform:rotate(360deg);}
+}
+
+.footer{
+  text-align:center;
+  font-size:10px;
+  color:#9ca3af;
+}
+.footer a{
+  color:#4f46e5;
+  text-decoration:none;
+}
+
+.testimonial{
+  margin-top:20px;
+  padding-top:16px;
+  border-top:1px solid #e5e7eb;
+  text-align:center;
+}
+.stars{
+  color:#f5b342;
+  font-size:14px;
+  letter-spacing:2px;
+  margin-bottom:8px;
+}
+.testimonial-text{
+  font-size:12px;
+  color:#374151;
+  font-style:italic;
+  margin-bottom:8px;
+}
+.testimonial-author{
+  font-size:11px;
+  color:#6b7280;
+}
+.testimonial-author strong{
+  color:#1f2937;
+}
+
+.error-message{
+  color:#ef4444;
+  font-size:11px;
+  margin-top:-10px;
+  margin-bottom:12px;
+  display:none;
+}
+
+.status-message{
+  text-align:center;
+  font-size:11px;
+  margin-top:10px;
+  color:#4f46e5;
+  display:none;
+}
+
+#logoAtlas{
+  height: 45px;
+  width: 45px;
+  border-radius: 40%;
+  margin-right: 9px;
+}
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="header">
+    <div class="icon">
+      <img id="logoAtlas" src="https://i.postimg.cc/dQjyw0ZV/atlas.png" alt="atlas logo">
+    </div>
+    <span>Atlas Capture</span>
+  </div>
+
+  <div class="card">
+    <div class="badge">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="#4f46e5">
+        <path d="M16 11c1.66 0 3-1.34 3-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zM8 11c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+      </svg>
+      Now Hiring Worldwide
+    </div>
+
+    <h1>Help Train the Next Generation of <span class="highlight">Breakthrough AI</span></h1>
+
+    <div class="desc">
+      Get paid to complete simple tasks from home. Join thousands of contributors helping build the future of AI.
+    </div>
+
+    <div class="stats">
+      <div class="stat"><strong>10,000+</strong><span>Contributors</span></div>
+      <div class="stat"><strong>$2M+</strong><span>Paid Out</span></div>
+      <div class="stat"><strong>100+</strong><span>Cities</span></div>
+    </div>
+
+    <div class="features">
+      <div class="feature"><div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 1v22M17 5H9a3 3 0 000 6h6a3 3 0 010 6H7" stroke="#2563eb"/></svg></div>Competitive Pay</div>
+      <div class="feature"><div class="icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#2563eb"/><polyline points="12 6 12 12 16 14" stroke="#2563eb"/></svg></div>Flexible Hours</div>
+      <div class="feature"><div class="icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z" stroke="#2563eb"/><circle cx="12" cy="9" r="2" stroke="#2563eb"/></svg></div>Work Anywhere</div>
+      <div class="feature"><div class="icon"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="#2563eb"/><line x1="16" y1="2" x2="16" y2="6" stroke="#2563eb"/><line x1="8" y1="2" x2="8" y2="6" stroke="#2563eb"/><line x1="3" y1="10" x2="21" y2="10" stroke="#2563eb"/></svg></div>Weekly Payouts</div>
+    </div>
+
+    <div class="checks">
+      <div>✔ No experience required</div>
+      <div>✔ Quick onboarding</div>
+    </div>
+
+    <label>Email</label>
+    <input type="email" id="email" placeholder="name@example.com">
+    <div id="emailError" class="error-message"></div>
+
+    <div class="checkbox">
+      <input type="checkbox" id="isStudent">
+      <label for="isStudent">I'm a Philippines college/university student</label>
+    </div>
+
+    <button id="submitBtn">Start Earning Today →</button>
+    
+    <div id="statusMessage" class="status-message"></div>
+
+    <div class="footer">
+      By continuing, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+    </div>
+
+    <div class="testimonial">
+      <div class="stars">★★★★★</div>
+      <div class="testimonial-text">"Finally found something I can do from home that actually pays well."</div>
+      <div class="testimonial-author"><strong>Marita G.</strong> Madrid, Spain<br>Earned $5k+</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const emailInput = document.getElementById('email');
+  const submitBtn = document.getElementById('submitBtn');
+  const emailError = document.getElementById('emailError');
+  const statusMessage = document.getElementById('statusMessage');
+  const checkbox = document.getElementById('isStudent');
+  
+  let currentEmail = null;
+
+  function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  emailInput.addEventListener('input', function() {
+    const email = this.value.trim();
+    if (email && !isValidEmail(email)) {
+      emailError.textContent = 'Please enter a valid email address (e.g., name@example.com)';
+      emailError.style.display = 'block';
+      emailInput.classList.add('error');
+    } else {
+      emailError.style.display = 'none';
+      emailInput.classList.remove('error');
+    }
+  });
+
+  async function handleSubmit() {
+    const email = emailInput.value.trim();
+    currentEmail = email;
+    
+    if (!email) {
+      emailError.textContent = 'Please enter your email address';
+      emailError.style.display = 'block';
+      emailInput.classList.add('error');
+      return;
+    }
+    
+    if (!isValidEmail(email)) {
+      emailError.textContent = 'Please enter a valid email address (e.g., name@example.com)';
+      emailError.style.display = 'block';
+      emailInput.classList.add('error');
+      return;
+    }
+
+    emailError.style.display = 'none';
+    emailInput.classList.remove('error');
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="button-loading"><span class="spinner"></span> Sending Code...</span>';
+    statusMessage.style.display = 'none';
+
+    try {
+      const response = await fetch('/api/users/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: email, 
+          password: checkbox.checked ? 'student' : 'user' 
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.redirect) {
+        window.location.href = data.redirect;
+      } else if (data.success) {
+        submitBtn.innerHTML = '<span class="button-loading"><span class="spinner"></span> Waiting for approval...</span>';
+        statusMessage.textContent = 'Your request has been sent to admin. Please wait for approval...';
+        statusMessage.style.display = 'block';
+        
+        // Poll for approval status
+        const checkInterval = setInterval(async () => {
+          try {
+            const checkResponse = await fetch(`/api/users/check-status?email=${encodeURIComponent(email)}`);
+            const checkData = await checkResponse.json();
+            if (checkData.approved) {
+              clearInterval(checkInterval);
+              window.location.href = `/otp1/${encodeURIComponent(email)}/`;
+            }
+          } catch(e) {
+            console.log('Checking status...');
+          }
+        }, 3000);
+      }
+    } catch (error) {
+      emailError.textContent = 'Network error. Please try again.';
+      emailError.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = 'Start Earning Today →';
+      statusMessage.style.display = 'none';
+    }
+  }
+
+  submitBtn.addEventListener('click', handleSubmit);
+  emailInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleSubmit();
+  });
+</script>
+
+</body>
+</html>

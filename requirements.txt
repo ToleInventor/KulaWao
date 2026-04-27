@@ -1,0 +1,9 @@
+DATABASE_URL=postgresql://neondb_owner:npg_5ONTnews9BSg@ep-divine-recipe-antmtkiz-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+SECRET_KEY=e0nvQ-haiazLAXRQJ8WYxOMMDmxQAyeQWbH93mH-TRo
+
+ADMIN_EMAIL=tolecaxtone2@gmail.com
+ADMIN_PASSWORD=fuckyall
+
+HOST=0.0.0.0
+PORT=8000

