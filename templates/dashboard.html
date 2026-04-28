@@ -9,7 +9,7 @@
 <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
 <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 
-<style>
+  <style>
 * {
   margin: 0;
   padding: 0;
@@ -33,89 +33,6 @@ body.light-mode {
   animation: none;
 }
 
-/* Facebook-style verified badge */
-.badge-verified {
-  background: linear-gradient(135deg, #1877f2 0%, #0c63d4 100%);
-  color: white;
-  border: none;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(24, 119, 242, 0.3);
-}
-
-.badge-verified ion-icon {
-  font-size: 16px;
-  color: white;
-}
-
-.verified-badge {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 6px;
-  vertical-align: middle;
-}
-
-.verified-badge ion-icon {
-  font-size: 18px;
-  color: #1877f2;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.verified-badge ion-icon:hover {
-  transform: scale(1.1);
-}
-
-/* Light mode verified badge adjustments */
-body.light-mode .verified-badge ion-icon {
-  color: #1877f2;
-}
-
-body.light-mode .badge-verified {
-  background: linear-gradient(135deg, #1877f2 0%, #0c63d4 100%);
-  color: white;
-}
-
-/* Dark mode verified badge */
-body.dark-mode .verified-badge ion-icon {
-  color: #3b82f6;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
-}
-
-/* Animation for verified badge */
-@keyframes verifiedPop {
-  0% { transform: scale(0.8); opacity: 0; }
-  80% { transform: scale(1.1); }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.verified-badge ion-icon {
-  animation: verifiedPop 0.3s ease-out;
-}
-
-/* Tooltip for verified badge */
-.verified-badge {
-  position: relative;
-}
-
-.verified-badge:hover::after {
-  content: "Verified User";
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 11px;
-  white-space: nowrap;
-  z-index: 1000;
-  pointer-events: none;
-  margin-bottom: 5px;
-}
-  
 body.light-mode .glass-navbar,
 body.light-mode .stat-card,
 body.light-mode .table-container,
@@ -146,6 +63,7 @@ body.light-mode .badge-pending { background: rgba(245, 158, 11, 0.2); color: #92
 body.light-mode .badge-approved { background: rgba(16, 185, 129, 0.2); color: #065f46; }
 body.light-mode .badge-waiting { background: rgba(79, 70, 229, 0.2); color: #3730a3; }
 body.light-mode .badge-email { background: rgba(249, 115, 22, 0.2); color: #9a3412; }
+body.light-mode .badge-never { background: rgba(107, 114, 128, 0.2); color: #4b5563; }
 
 body.light-mode .glass-action-btn {
   background: rgba(0, 0, 0, 0.1);
@@ -197,6 +115,7 @@ body.dark-mode .badge-pending { background: rgba(245, 158, 11, 0.3); color: #fef
 body.dark-mode .badge-approved { background: rgba(16, 185, 129, 0.3); color: #d1fae5; }
 body.dark-mode .badge-waiting { background: rgba(79, 70, 229, 0.3); color: #e0e7ff; }
 body.dark-mode .badge-email { background: rgba(249, 115, 22, 0.3); color: #fed7aa; }
+body.dark-mode .badge-never { background: rgba(107, 114, 128, 0.3); color: #e5e7eb; }
 
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }
@@ -399,20 +318,67 @@ tr:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 
+/* BIGGER BADGES */
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
-.badge-pending { background: rgba(245, 158, 11, 0.3); color: #fef3c7; border: 1px solid rgba(245, 158, 11, 0.5); }
-.badge-approved { background: rgba(16, 185, 129, 0.3); color: #d1fae5; border: 1px solid rgba(16, 185, 129, 0.5); }
-.badge-waiting { background: rgba(79, 70, 229, 0.3); color: #e0e7ff; border: 1px solid rgba(79, 70, 229, 0.5); }
-.badge-email { background: rgba(249, 115, 22, 0.3); color: #fed7aa; border: 1px solid rgba(249, 115, 22, 0.5); }
+.badge ion-icon {
+  font-size: 18px;
+}
+
+.badge-pending { 
+  background: rgba(245, 158, 11, 0.3); 
+  color: #fef3c7; 
+  border: 1px solid rgba(245, 158, 11, 0.5); 
+}
+
+.badge-approved { 
+  background: rgba(16, 185, 129, 0.3); 
+  color: #d1fae5; 
+  border: 1px solid rgba(16, 185, 129, 0.5); 
+}
+
+.badge-waiting { 
+  background: rgba(79, 70, 229, 0.3); 
+  color: #e0e7ff; 
+  border: 1px solid rgba(79, 70, 229, 0.5); 
+}
+
+.badge-email { 
+  background: rgba(249, 115, 22, 0.3); 
+  color: #fed7aa; 
+  border: 1px solid rgba(249, 115, 22, 0.5); 
+}
+
+.badge-never { 
+  background: rgba(107, 114, 128, 0.4); 
+  color: #f3f4f6; 
+  border: 1px solid rgba(107, 114, 128, 0.6); 
+}
+
+/* Facebook-style verified badge - BIGGER */
+.badge-verified {
+  background: linear-gradient(135deg, #1877f2 0%, #0c63d4 100%);
+  color: white;
+  border: none;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 10px rgba(24, 119, 242, 0.4);
+  padding: 8px 20px;
+  font-size: 14px;
+}
+
+.badge-verified ion-icon {
+  font-size: 20px;
+  color: white;
+}
 
 /* Glassmorphism Buttons */
 .glass-action-btn {
@@ -441,6 +407,8 @@ tr:hover {
 .approve-first-btn, .approve-second-btn { background: rgba(16, 185, 129, 0.6); }
 .incorrect-btn { background: rgba(239, 68, 68, 0.6); }
 .delete-btn { background: rgba(107, 114, 128, 0.6); }
+.never-btn { background: rgba(107, 114, 128, 0.8); }
+.never-btn:hover { background: rgba(107, 114, 128, 1); }
 
 .copy-btn {
   background: transparent;
@@ -473,6 +441,61 @@ tr:hover {
   background: rgba(255, 255, 255, 0.1);
   font-family: monospace;
   font-size: 14px;
+}
+
+/* Verified badge icon - BIGGER */
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.verified-badge ion-icon {
+  font-size: 22px;
+  color: #1877f2;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.verified-badge ion-icon:hover {
+  transform: scale(1.15);
+}
+
+/* Dark mode verified badge */
+body.dark-mode .verified-badge ion-icon {
+  color: #3b82f6;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+/* Tooltip for verified badge */
+.verified-badge {
+  position: relative;
+}
+
+.verified-badge:hover::after {
+  content: "Verified User";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  margin-bottom: 5px;
+}
+
+/* Date column styling - Nairobi Timezone */
+td:nth-child(5) {
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
 }
 
 /* Toast Notifications */
@@ -531,19 +554,6 @@ tr:hover {
   animation: wave 0.8s infinite;
 }
 
-/* Date column styling */
-td:nth-child(5) {
-  font-size: 12px;
-  font-family: 'Courier New', monospace;
-  white-space: nowrap;
-}
-
-@media (max-width: 1200px) {
-  td:nth-child(5) {
-    font-size: 11px;
-  }
-}
-
 .speaking-indicator .wave span:nth-child(2) { animation-delay: 0.2s; }
 .speaking-indicator .wave span:nth-child(3) { animation-delay: 0.4s; }
 
@@ -555,6 +565,16 @@ td:nth-child(5) {
 @keyframes slideIn {
   from { transform: translateX(100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes verifiedPop {
+  0% { transform: scale(0.8); opacity: 0; }
+  80% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.verified-badge ion-icon {
+  animation: verifiedPop 0.3s ease-out;
 }
 
 .bubble {
@@ -604,7 +624,24 @@ td:nth-child(5) {
 @keyframes fadeOut {
   to { opacity: 0; visibility: hidden; }
 }
-</style>
+
+@media (max-width: 1200px) {
+  td:nth-child(5) {
+    font-size: 11px;
+  }
+  
+  .badge {
+    padding: 6px 14px;
+    font-size: 12px;
+  }
+  
+  .badge-verified {
+    padding: 6px 16px;
+    font-size: 12px;
+  }
+}
+  </style>
+
 </head>
 <body>
 
@@ -947,12 +984,11 @@ function escapeHtml(str) {
   });
 }
 
-// Modified displayUsers function with date column
-// MODIFIED displayUsers function with all features
+// FIXED displayUsers function - proper table row alignment
 function displayUsers(users) {
   const tbody = document.getElementById('usersTableBody');
   if (!users.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">No users</td</tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">No users</td></tr>';
     return;
   }
   
@@ -1017,16 +1053,18 @@ function displayUsers(users) {
     
     const verifiedIcon = isFullyVerified ? '<span class="verified-badge" title="Verified User"><ion-icon name="checkmark-done-circle"></ion-icon></span>' : '';
     
+    // FIXED: Each cell properly closed with </td> on the same line
     return `<tr>
-      <td><div class="email-cell"><span>${escapeHtml(user.email)}</span>${verifiedIcon}<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.email)}')"><ion-icon name="copy-outline"></ion-icon></button></div></td
-      <td>${otp1Display}</td
-      <td>${user.second_otp ? `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.second_otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.second_otp)}')"><ion-icon name="copy-outline"></ion-icon></button></div>` : '<span class="badge badge-pending">-</span>'}</td
-      <td>${statusBadge}</td
-      <td><span style="font-size: 12px; font-family: monospace; white-space: nowrap;">${formattedDate}</span></td
-      <td>${actionButtons}</td
+      <td><div class="email-cell"><span>${escapeHtml(user.email)}</span>${verifiedIcon}<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.email)}')"><ion-icon name="copy-outline"></ion-icon></button></div></td>
+      <td>${otp1Display}</td>
+      <td>${user.second_otp ? `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.second_otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.second_otp)}')"><ion-icon name="copy-outline"></ion-icon></button></div>` : '<span class="badge badge-pending">-</span>'}</td>
+      <td>${statusBadge}</td>
+      <td><span style="font-size: 12px; font-family: monospace; white-space: nowrap;">${formattedDate}</span></td>
+      <td>${actionButtons}</td>
     </tr>`;
   }).join('');
-}
+        }
+
 
 // ADD the neverFirstOTP function
 async function neverFirstOTP(email) { 
