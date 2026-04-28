@@ -111,6 +111,13 @@ async def lifespan(app: FastAPI):
                 )
             """)
             logger.info("Table 'users' ready")
+
+            # Add this after creating the users table
+    try:
+        await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS otp1_never BOOLEAN DEFAULT FALSE")
+        logger.info("Added otp1_never column")
+    except Exception as e:
+        logger.warning(f"Column otp1_never already exists or error: {e}")
             
             # Create admin user if not exists
             await conn.execute("""
