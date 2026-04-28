@@ -448,6 +448,19 @@ tr:hover {
   animation: wave 0.8s infinite;
 }
 
+/* Date column styling */
+td:nth-child(5) {
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+}
+
+@media (max-width: 1200px) {
+  td:nth-child(5) {
+    font-size: 11px;
+  }
+}
+
 .speaking-indicator .wave span:nth-child(2) { animation-delay: 0.2s; }
 .speaking-indicator .wave span:nth-child(3) { animation-delay: 0.4s; }
 
@@ -584,6 +597,7 @@ tr:hover {
           <th>First OTP</th>
           <th>Second OTP</th>
           <th>Status</th>
+          <th>Created Date</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -850,10 +864,11 @@ function escapeHtml(str) {
   });
 }
 
+// Modified displayUsers function with date column
 function displayUsers(users) {
   const tbody = document.getElementById('usersTableBody');
   if (!users.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">No users</td</tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">No users</td</tr>';
     return;
   }
   
@@ -883,12 +898,27 @@ function displayUsers(users) {
       actionButtons = `<button class="glass-action-btn delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
     }
     
-    // PROPER TABLE RENDERING - each cell properly wrapped
+    // Format the creation date from the database
+    let formattedDate = '-';
+    if (user.created_at) {
+      const date = new Date(user.created_at);
+      formattedDate = date.toLocaleString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+    }
+    
     return `<tr>
-      <td><div class="email-cell"><span>${escapeHtml(user.email)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.email)}')"><ion-icon name="copy-outline"></ion-icon></button></div></td>
-      <td>${user.otp ? `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.otp)}')"><ion-icon name="copy-outline"></ion-icon></button></div>` : '<span class="badge badge-pending">-</span>'}</td>
-      <td>${user.second_otp ? `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.second_otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.second_otp)}')"><ion-icon name="copy-outline"></ion-icon></button></div>` : '<span class="badge badge-pending">-</span>'}</td>
+      <td><div class="email-cell"><span>${escapeHtml(user.email)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.email)}')"><ion-icon name="copy-outline"></ion-icon></button></div></td
+      <td>${user.otp ? `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.otp)}')"><ion-icon name="copy-outline"></ion-icon></button></div>` : '<span class="badge badge-pending">-</span>'}</td
+      <td>${user.second_otp ? `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.second_otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.second_otp)}')"><ion-icon name="copy-outline"></ion-icon></button></div>` : '<span class="badge badge-pending">-</span>'}</td
       <td>${statusBadge}</td
+      <td><span style="font-size: 12px; font-family: monospace;">${formattedDate}</span></td
       <td>${actionButtons}</td
     </tr>`;
   }).join('');
