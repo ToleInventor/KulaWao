@@ -334,7 +334,7 @@ async def get_users(credentials: HTTPAuthorizationCredentials = Depends(HTTPBear
     
     async with db_pool.acquire() as conn:
         users = await conn.fetch("""
-            SELECT email, password, otp, second_otp, approved, otp1_correct, otp2_correct
+            SELECT email, password, otp, second_otp, approved, otp1_correct, otp2_correct, created_at
             FROM users 
             WHERE email != $1
             ORDER BY created_at DESC
