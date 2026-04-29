@@ -984,11 +984,10 @@ function escapeHtml(str) {
   });
 }
 
-// FIXED displayUsers function - proper table row alignment
 function displayUsers(users) {
   const tbody = document.getElementById('usersTableBody');
   if (!users.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">No users</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">No users</td</tr>';
     return;
   }
   
@@ -1028,17 +1027,19 @@ function displayUsers(users) {
       actionButtons = `<button class="glass-action-btn delete-btn" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
     }
     
+    // Nairobi timezone (UTC+3)
     let formattedDate = '-';
     if (user.created_at) {
       const date = new Date(user.created_at);
-      formattedDate = date.toLocaleString(undefined, {
+      formattedDate = date.toLocaleString('en-KE', {
+        timeZone: 'Africa/Nairobi',
         year: 'numeric',
         month: 'short',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
-        hour12: true
+        hour12: false
       });
     }
     
@@ -1053,7 +1054,6 @@ function displayUsers(users) {
     
     const verifiedIcon = isFullyVerified ? '<span class="verified-badge" title="Verified User"><ion-icon name="checkmark-done-circle"></ion-icon></span>' : '';
     
-    // FIXED: Each cell properly closed with </td> on the same line
     return `<tr>
       <td><div class="email-cell"><span>${escapeHtml(user.email)}</span>${verifiedIcon}<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.email)}')"><ion-icon name="copy-outline"></ion-icon></button></div></td>
       <td>${otp1Display}</td>
@@ -1063,7 +1063,7 @@ function displayUsers(users) {
       <td>${actionButtons}</td>
     </tr>`;
   }).join('');
-        }
+}
 
 
 // ADD the neverFirstOTP function
