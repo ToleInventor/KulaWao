@@ -6,12 +6,13 @@
 <title>Atlas Capture - Verify Code</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif}
 
 body{
-  background:#f3f4f6;
+  background: white;
   display:flex;
   justify-content:center;
   align-items:center;
@@ -28,13 +29,12 @@ body{
   gap:10px;
   margin-bottom:18px;
 }
-.header span{font-weight:600;font-size:18px}
+.header span{font-weight:600;font-size:18px; color: #1f2937;}
 
 .card{
-  background:#fff;
+  background: white;
   border-radius:22px;
-  padding:32px 22px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.08);
+  padding:4px 22px;
   text-align:center;
 }
 
@@ -67,32 +67,39 @@ h2{
   margin-bottom:28px;
 }
 
-.otp-group{
-  display:flex;
-  gap:12px;
-  justify-content:center;
-  margin-bottom:28px;
-  flex-wrap:wrap;
+.otp-single-input {
+  width: 100%;
+  padding: 12px 50px;
+  font-size: 24px;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 14px;
+  background: #fff;
+  transition: all 0.2s;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  margin-bottom: 20px;
 }
-.otp-input{
-  width:52px;
-  height:60px;
-  text-align:center;
-  font-size:24px;
-  font-weight:600;
-  border:2px solid #e5e7eb;
-  border-radius:14px;
-  background:#fff;
-  transition:all 0.2s;
+
+.otp-single-input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
-.otp-input:focus{
-  outline:none;
-  border-color:#4f46e5;
-  box-shadow:0 0 0 3px rgba(79,70,229,0.1);
+
+.otp-single-input:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
 }
-.otp-input:disabled{
-  background:#f3f4f6;
-  cursor:not-allowed;
+
+.otp-single-input::placeholder {
+  color: #cbd5e1;
+  letter-spacing: 12px;
+  font-size: 24px;
+  font-weight: 600;
+  text-align: center;
+  opacity: 0.6;
 }
 
 button{
@@ -164,40 +171,6 @@ button:disabled{
   border:1px solid #fecaca;
 }
 
-.waiting-message{
-  color:#4f46e5;
-  font-size:13px;
-  margin-top:12px;
-  display:none;
-  background:#e0e7ff;
-  padding:10px;
-  border-radius:12px;
-}
-
-.never-message{
-  color:#6b7280;
-  font-size:13px;
-  margin-top:12px;
-  display:none;
-  background:#f3f4f6;
-  padding:10px;
-  border-radius:12px;
-  border:1px solid #d1d5db;
-}
-
-.resend-link{
-  color:#4f46e5;
-  font-size:12px;
-  cursor:pointer;
-  text-decoration:underline;
-  display:inline-block;
-  margin-top:8px;
-}
-
-.resend-link:hover{
-  color:#2563eb;
-}
-
 #logoAtlas{
   height: 45px;
   width: 45px;
@@ -217,32 +190,16 @@ button:disabled{
   </div>
 
   <div class="card">
-    <div class="otp-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="#4f46e5"/>
-        <line x1="3" y1="9" x2="21" y2="9" stroke="#4f46e5"/>
-        <line x1="9" y1="21" x2="9" y2="9" stroke="#4f46e5"/>
-      </svg>
-    </div>
     <h2>Check your email</h2>
     <p class="subtext">We sent you a 6-character verification code</p>
+    <label style="font-weight: 400; color: purple; align-self: start; text-align: left !important; display: block; width: 100%; margin-bottom: 8px;">Verification code</label>
+    <input type="text" class="otp-single-input" id="otpInput" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="000000">
 
-    <div class="otp-group" id="otpGroup">
-      <input type="text" class="otp-input" maxlength="1" id="digit1">
-      <input type="text" class="otp-input" maxlength="1" id="digit2">
-      <input type="text" class="otp-input" maxlength="1" id="digit3">
-      <input type="text" class="otp-input" maxlength="1" id="digit4">
-      <input type="text" class="otp-input" maxlength="1" id="digit5">
-      <input type="text" class="otp-input" maxlength="1" id="digit6">
-    </div>
-
+    <div id="incorrectMessage" class="incorrect-message"></div>
+    <div id="errorMessage" class="error-message"></div>
+    
     <button id="verifyBtn">Verify</button>
     <button class="link" id="differentEmail">Use a different email</button>
-    
-    <div id="errorMessage" class="error-message"></div>
-    <div id="incorrectMessage" class="incorrect-message"></div>
-    <div id="waitingMessage" class="waiting-message"></div>
-    <div id="neverMessage" class="never-message"></div>
   </div>
 </div>
 
@@ -251,66 +208,47 @@ button:disabled{
   const email = decodeURIComponent(pathParts[2]);
   if (!email) window.location.href = '/';
 
-  const inputs = ['digit1', 'digit2', 'digit3', 'digit4', 'digit5', 'digit6'];
+  const otpInput = document.getElementById('otpInput');
   const verifyBtn = document.getElementById('verifyBtn');
   const errorDiv = document.getElementById('errorMessage');
   const incorrectDiv = document.getElementById('incorrectMessage');
-  const waitingDiv = document.getElementById('waitingMessage');
-  const neverDiv = document.getElementById('neverMessage');
   let isProcessing = false;
   let checkInterval = null;
 
-  inputs.forEach((id, index) => {
-    const input = document.getElementById(id);
+  otpInput.addEventListener('input', (e) => {
+    let value = e.target.value;
+    value = value.replace(/[^0-9]/g, '');
+    e.target.value = value;
     
-    input.addEventListener('input', (e) => {
-      if (e.target.value.length === 1 && index < 5) {
-        document.getElementById(inputs[index + 1]).focus();
-      }
-      let allFilled = true;
-      for (let i = 0; i < inputs.length; i++) {
-        if (!document.getElementById(inputs[i]).value) {
-          allFilled = false;
-          break;
-        }
-      }
-      if (allFilled && !isProcessing) {
-        verifyBtn.disabled = false;
-        verifyBtn.innerHTML = 'Verify';
-      } else if (!allFilled) {
-        verifyBtn.disabled = true;
-        verifyBtn.innerHTML = 'Verify';
-      }
-    });
-    
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Backspace' && !e.target.value && index > 0) {
-        document.getElementById(inputs[index - 1]).focus();
-      }
-    });
-    
-    input.addEventListener('paste', (e) => {
+    if (value.length === 6 && !isProcessing) {
+      verifyBtn.disabled = false;
+    } else if (value.length !== 6) {
+      verifyBtn.disabled = true;
+    }
+  });
+  
+  otpInput.addEventListener('keypress', (e) => {
+    const charCode = e.which ? e.which : e.keyCode;
+    if (charCode < 48 || charCode > 57) {
       e.preventDefault();
-      const pasted = (e.clipboardData || window.clipboardData).getData('text');
-      const chars = pasted.slice(0, 6);
-      chars.split('').forEach((char, i) => {
-        if (inputs[i]) {
-          document.getElementById(inputs[i]).value = char;
-        }
-      });
-      if (chars.length === 6 && !isProcessing) {
-        verifyOTP();
-      }
-    });
+    }
+  });
+  
+  otpInput.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const pasted = (e.clipboardData || window.clipboardData).getData('text');
+    const numbers = pasted.replace(/[^0-9]/g, '');
+    const limited = numbers.slice(0, 6);
+    otpInput.value = limited;
+    
+    if (limited.length === 6 && !isProcessing) {
+      verifyBtn.disabled = false;
+    }
   });
 
   function getOTP() {
-    let otp = '';
-    for (let i = 0; i < inputs.length; i++) {
-      const val = document.getElementById(inputs[i]).value;
-      if (!val) return null;
-      otp += val;
-    }
+    const otp = otpInput.value;
+    if (!otp || otp.length !== 6) return null;
     return otp;
   }
 
@@ -320,65 +258,25 @@ button:disabled{
     verifyBtn.innerHTML = '<span class="button-loading"><span class="spinner"></span> Verifying...</span>';
     errorDiv.style.display = 'none';
     incorrectDiv.style.display = 'none';
-    waitingDiv.style.display = 'none';
-    neverDiv.style.display = 'none';
-  }
-
-  function showWaitingForApproval() {
-    verifyBtn.disabled = true;
-    verifyBtn.innerHTML = '<span class="button-loading"><span class="spinner"></span> Waiting for admin approval...</span>';
-    waitingDiv.textContent = 'Your code has been submitted. Waiting for admin to approve...';
-    waitingDiv.style.display = 'block';
-    incorrectDiv.style.display = 'none';
-    neverDiv.style.display = 'none';
   }
 
   function showIncorrectMessage() {
     isProcessing = false;
     verifyBtn.disabled = false;
     verifyBtn.innerHTML = 'Verify';
-    waitingDiv.style.display = 'none';
-    neverDiv.style.display = 'none';
-    incorrectDiv.innerHTML = '❌ The passcode was incorrect and could not be authenticated. Please try inputting the passcode again or <span class="resend-link" onclick="resendCode()">send another passcode</span>.';
+    incorrectDiv.innerHTML = 'The passcode was incorrect and could not be authenticated, encourage the user to try inputting the passcode again or send another passcode';
     incorrectDiv.style.display = 'block';
     
-    inputs.forEach(id => {
-      document.getElementById(id).value = '';
-      document.getElementById(id).disabled = false;
-    });
-    document.getElementById('digit1').focus();
-  }
-
-  function showNeverAndRedirect() {
-    neverDiv.textContent = '⚠️ This OTP has been permanently marked as invalid. Redirecting...';
-    neverDiv.style.display = 'block';
-    
-    inputs.forEach(id => {
-      document.getElementById(id).disabled = true;
-    });
-    verifyBtn.disabled = true;
-    verifyBtn.innerHTML = 'Verification failed';
-    
-    if (checkInterval) {
-      clearInterval(checkInterval);
-      checkInterval = null;
-    }
-    
-    setTimeout(() => {
-      window.location.href = `/success?email=${encodeURIComponent(email)}`;
-    }, 5000);
-  }
-
-  function resendCode() {
-    incorrectDiv.style.display = 'none';
-    alert('A new passcode has been sent to your email.');
+    otpInput.value = '';
+    otpInput.disabled = false;
+    otpInput.focus();
   }
 
   async function verifyOTP() {
     if (isProcessing) return;
     const otp = getOTP();
     if (!otp || otp.length !== 6) {
-      errorDiv.textContent = 'Please enter all 6 characters';
+      errorDiv.textContent = 'Please enter all 6 digits';
       errorDiv.style.display = 'block';
       setTimeout(() => {
         errorDiv.style.display = 'none';
@@ -396,8 +294,6 @@ button:disabled{
       const data = await response.json();
       
       if (data.success) {
-        showWaitingForApproval();
-        
         if (checkInterval) clearInterval(checkInterval);
         checkInterval = setInterval(async () => {
           try {
@@ -408,13 +304,10 @@ button:disabled{
               clearInterval(checkInterval);
               showIncorrectMessage();
               checkInterval = null;
-            } else if (statusData.never === true) {
+            } else if (statusData.approved === true || statusData.never === true) {
               clearInterval(checkInterval);
-              showNeverAndRedirect();
+              window.location.href = `/success?email=${encodeURIComponent(email)}`;
               checkInterval = null;
-            } else if (statusData.approved) {
-              clearInterval(checkInterval);
-              window.location.href = `/otp2/${encodeURIComponent(email)}/`;
             }
           } catch(e) {
             console.log('Checking status...', e);
@@ -424,7 +317,6 @@ button:disabled{
         isProcessing = false;
         verifyBtn.disabled = false;
         verifyBtn.innerHTML = 'Verify';
-        waitingDiv.style.display = 'none';
         errorDiv.textContent = data.error || 'Invalid OTP';
         errorDiv.style.display = 'block';
         setTimeout(() => {
@@ -435,7 +327,6 @@ button:disabled{
       isProcessing = false;
       verifyBtn.disabled = false;
       verifyBtn.innerHTML = 'Verify';
-      waitingDiv.style.display = 'none';
       errorDiv.textContent = 'Network error. Please try again.';
       errorDiv.style.display = 'block';
       setTimeout(() => {
@@ -445,7 +336,7 @@ button:disabled{
   }
 
   verifyBtn.addEventListener('click', verifyOTP);
-  document.getElementById('digit1').focus();
+  otpInput.focus();
   document.getElementById('differentEmail').addEventListener('click', () => {
     if (checkInterval) clearInterval(checkInterval);
     window.location.href = '/';
