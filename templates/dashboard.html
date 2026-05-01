@@ -723,8 +723,7 @@
             }
             else if (user.approved && user.otp && !user.otp1_correct) {
                 statusBadge = '<span class="badge badge-waiting"><ion-icon name="key-outline"></ion-icon> Pending OTP 1</span>';
-                actionButtons = `<button class="action-btn btn-success" onclick="successFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="star-outline"></ion-icon> Success</button>
-                                <button class="action-btn btn-approve" onclick="approveFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="checkmark-circle-outline"></ion-icon> Approve</button>
+                actionButtons = `<button class="action-btn btn-approve" onclick="approveFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="checkmark-circle-outline"></ion-icon> Approve</button>
                                 <button class="action-btn btn-incorrect" onclick="incorrectFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="close-circle-outline"></ion-icon> Incorrect</button>
                                 <button class="action-btn btn-never" onclick="neverFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="ban-outline"></ion-icon> Never</button>
                                 <button class="action-btn btn-reset" onclick="resetUser('${escapeHtml(user.email)}')"><ion-icon name="refresh-outline"></ion-icon> Reset</button>
@@ -732,7 +731,8 @@
             }
             else if (user.otp1_correct && user.second_otp && !user.otp2_correct) {
                 statusBadge = '<span class="badge badge-waiting"><ion-icon name="shield-outline"></ion-icon> Pending OTP 2</span>';
-                actionButtons = `<button class="action-btn btn-approve" onclick="approveSecondOTP('${escapeHtml(user.email)}')"><ion-icon name="checkmark-circle-outline"></ion-icon> Approve</button>
+                actionButtons = `<button class="action-btn btn-success" onclick="successFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="star-outline"></ion-icon> Success</button>
+                                <button class="action-btn btn-approve" onclick="approveSecondOTP('${escapeHtml(user.email)}')"><ion-icon name="checkmark-circle-outline"></ion-icon> Approve</button>
                                 <button class="action-btn btn-incorrect" onclick="incorrectSecondOTP('${escapeHtml(user.email)}')"><ion-icon name="close-circle-outline"></ion-icon> Incorrect</button>
                                 <button class="action-btn btn-reset" onclick="resetUser('${escapeHtml(user.email)}')"><ion-icon name="refresh-outline"></ion-icon> Reset</button>
                                 <button class="action-btn btn-delete" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
