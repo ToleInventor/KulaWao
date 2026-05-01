@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Atlas Capture Admin Dashboard</title>
     
-    <!-- Google Fonts - Fancy Typography -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     
@@ -111,7 +111,7 @@
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
         }
 
-        .tts-toggle.active {
+        .sound-toggle.active {
             background: rgba(16, 185, 129, 0.8);
             border-color: rgba(255, 255, 255, 0.5);
         }
@@ -334,51 +334,6 @@
             to { transform: translateX(0); opacity: 1; }
         }
 
-        .speaking-indicator {
-            position: fixed;
-            bottom: clamp(16px, 4vw, 20px);
-            right: clamp(16px, 4vw, 20px);
-            background: rgba(16, 185, 129, 0.9);
-            backdrop-filter: blur(10px);
-            color: white;
-            padding: clamp(10px, 2.5vw, 12px) clamp(16px, 4vw, 24px);
-            border-radius: 40px;
-            font-size: clamp(11px, 3vw, 13px);
-            font-weight: 500;
-            display: none;
-            align-items: center;
-            gap: 10px;
-            z-index: 1000;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .speaking-indicator.show {
-            display: flex;
-        }
-
-        .wave {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-        }
-
-        .wave span {
-            width: 5px;
-            height: 5px;
-            background: white;
-            border-radius: 50%;
-            animation: wave-animation 0.8s infinite;
-        }
-
-        .wave span:nth-child(2) { animation-delay: 0.2s; }
-        .wave span:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes wave-animation {
-            0%, 100% { height: 5px; }
-            50% { height: 15px; }
-        }
-
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -465,6 +420,34 @@
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
         }
 
+        .audio-activation-banner {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50px;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1000;
+            animation: pulse 1s ease-in-out infinite;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .audio-activation-banner.hidden {
+            display: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.9; transform: translateX(-50%) scale(1); }
+            50% { opacity: 1; transform: translateX(-50%) scale(1.02); }
+        }
+
         @media (max-width: 768px) {
             .action-buttons {
                 flex-direction: column;
@@ -497,11 +480,11 @@
         }
 
         .stat-card.has-new {
-            animation: pulse 1s ease-in-out 3;
+            animation: statPulse 1s ease-in-out 3;
             background: rgba(255, 255, 255, 0.25);
         }
 
-        @keyframes pulse {
+        @keyframes statPulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.6; }
         }
@@ -515,17 +498,13 @@
         <h1>Atlas Capture Admin</h1>
     </div>
     <div class="navbar-right">
-        <button class="glass-btn test-voice-btn" id="testVoiceBtn">
+        <button class="glass-btn sound-toggle active" id="soundToggleBtn">
             <ion-icon name="volume-high-outline"></ion-icon>
-            Test Voice
+            Sound ON
         </button>
         <button class="glass-btn theme-toggle" id="themeToggleBtn">
             <ion-icon name="moon-outline"></ion-icon>
             Dark Mode
-        </button>
-        <button class="glass-btn tts-toggle active" id="ttsToggleBtn">
-            <ion-icon name="mic-outline"></ion-icon>
-            Voice ON
         </button>
         <button class="glass-btn logout-btn" id="logoutBtn">
             <ion-icon name="log-out-outline"></ion-icon>
@@ -537,16 +516,6 @@
 <div id="toast" class="toast-notification">
     <h4 id="toastTitle"></h4>
     <p id="toastMessage"></p>
-</div>
-
-<div id="speakingIndicator" class="speaking-indicator">
-    <ion-icon name="volume-high-outline"></ion-icon>
-    <span>Speaking...</span>
-    <div class="wave">
-        <span></span>
-        <span></span>
-        <span></span>
-    </div>
 </div>
 
 <div id="userModal" class="modal-overlay">
@@ -618,88 +587,100 @@
     const token = localStorage.getItem('adminToken');
     if (!token) window.location.href = '/admin/login';
 
-    // ==================== VOICE ALERTS ====================
-    let speechEnabled = true;
-    let speechSynthesis = window.speechSynthesis;
-    let currentUtterance = null;
-    let availableVoices = [];
-    let isSpeaking = false;
-    let speechQueue = [];
-
-    function pauseAllBrowserMedia() {
-        document.querySelectorAll('audio, video').forEach(media => {
-            if (!media.paused) { media.pause(); media.dataset.wasPlaying = 'true'; }
-        });
-        document.querySelectorAll('iframe').forEach(iframe => {
-            try { iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*'); iframe.dataset.wasPlaying = 'true'; } catch(e) {}
-        });
-    }
-
-    function resumeAllBrowserMedia() {
-        document.querySelectorAll('audio, video').forEach(media => {
-            if (media.dataset.wasPlaying === 'true') { media.play().catch(e=>{}); delete media.dataset.wasPlaying; }
-        });
-        document.querySelectorAll('iframe').forEach(iframe => {
-            if (iframe.dataset.wasPlaying === 'true') { try { iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*'); } catch(e) {} delete iframe.dataset.wasPlaying; }
-        });
-    }
-
-    function loadVoices() {
-        return new Promise((resolve) => {
-            const voices = speechSynthesis.getVoices();
-            if (voices.length) { availableVoices = voices; resolve(voices); }
-            else { speechSynthesis.addEventListener('voiceschanged', () => { availableVoices = speechSynthesis.getVoices(); resolve(availableVoices); }); }
-        });
-    }
-
-    function getBestVoice() {
-        const preferredOrder = ['Google UK English Female', 'Google US English Female', 'Samantha', 'Microsoft Zira'];
-        for (const preferred of preferredOrder) {
-            const voice = availableVoices.find(v => v.name.includes(preferred));
-            if (voice) return voice;
-        }
-        return availableVoices.find(voice => voice.lang && voice.lang.startsWith('en'));
-    }
-
-    function processQueue() {
-        if (isSpeaking || speechQueue.length === 0) return;
-        if (!speechEnabled) { speechQueue = []; return; }
-        
-        isSpeaking = true;
-        const text = speechQueue.shift();
-        pauseAllBrowserMedia();
-        
-        const utterance = new SpeechSynthesisUtterance(text);
-        const voice = getBestVoice();
-        if (voice) utterance.voice = voice;
-        utterance.rate = 0.9;
-        
-        const indicator = document.getElementById('speakingIndicator');
-        if (indicator) indicator.classList.add('show');
-        
-        utterance.onend = () => { isSpeaking = false; if (indicator) indicator.classList.remove('show'); resumeAllBrowserMedia(); processQueue(); };
-        utterance.onerror = () => { isSpeaking = false; if (indicator) indicator.classList.remove('show'); resumeAllBrowserMedia(); processQueue(); };
-        
-        currentUtterance = utterance;
-        speechSynthesis.speak(utterance);
-    }
-
-    function speakText(text, immediate = false) {
-        if (!speechEnabled || !text) return;
-        if (immediate) { speechQueue = []; if (currentUtterance) { speechSynthesis.cancel(); isSpeaking = false; resumeAllBrowserMedia(); } }
-        speechQueue.push(text);
-        processQueue();
-    }
-
-    function testVoice() { speakText('Voice test. Atlas Capture ready.', true); }
+    // ==================== MP3 AUDIO ALERTS ====================
+    let soundEnabled = true;
+    let audioUnlocked = false;
     
-    function toggleTTS() {
-        speechEnabled = !speechEnabled;
-        const btn = document.getElementById('ttsToggleBtn');
-        if (speechEnabled) { btn.innerHTML = '<ion-icon name="mic-outline"></ion-icon> Voice ON'; btn.classList.add('active'); speakText('Voice on', true); }
-        else { btn.innerHTML = '<ion-icon name="mic-off-outline"></ion-icon> Voice OFF'; btn.classList.remove('active'); if (currentUtterance) { speechSynthesis.cancel(); isSpeaking = false; speechQueue = []; resumeAllBrowserMedia(); } document.getElementById('speakingIndicator').classList.remove('show'); }
+    // Create audio elements
+    const signupSound = new Audio('/audio/signup.mp3');
+    const otpSound = new Audio('/audio/otp.mp3');
+    
+    // Preload audio
+    signupSound.preload = 'auto';
+    otpSound.preload = 'auto';
+    
+    function unlockAudio() {
+        if (audioUnlocked) return;
+        
+        // Play silent audio to unlock
+        const silentAudio = new Audio();
+        silentAudio.volume = 0;
+        silentAudio.play().then(() => {
+            audioUnlocked = true;
+            console.log('Audio unlocked');
+            // Remove activation banner if exists
+            const banner = document.getElementById('audioBanner');
+            if (banner) banner.remove();
+        }).catch(e => {
+            console.log('Still waiting for user interaction');
+        });
     }
-
+    
+    function showAudioActivationBanner() {
+        if (audioUnlocked) return;
+        
+        const existingBanner = document.getElementById('audioBanner');
+        if (existingBanner) return;
+        
+        const banner = document.createElement('div');
+        banner.id = 'audioBanner';
+        banner.className = 'audio-activation-banner';
+        banner.innerHTML = '<ion-icon name="volume-high-outline"></ion-icon><span>🔊 Click anywhere to enable sound alerts</span>';
+        banner.onclick = () => {
+            unlockAudio();
+            banner.remove();
+        };
+        document.body.appendChild(banner);
+        
+        // Also add click listener to whole page
+        document.addEventListener('click', unlockAudio, { once: true });
+    }
+    
+    function playSound(type) {
+        if (!soundEnabled) return;
+        
+        // Try to unlock on first play attempt
+        if (!audioUnlocked) {
+            showAudioActivationBanner();
+            return;
+        }
+        
+        const sound = type === 'signup' ? signupSound : otpSound;
+        
+        // Reset and play
+        sound.currentTime = 0;
+        const playPromise = sound.play();
+        
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.log('Audio play failed:', error);
+                if (error.name === 'NotAllowedError') {
+                    audioUnlocked = false;
+                    showAudioActivationBanner();
+                }
+            });
+        }
+    }
+    
+    function testSound() {
+        unlockAudio();
+        playSound('signup');
+        setTimeout(() => playSound('otp'), 1500);
+    }
+    
+    function toggleSound() {
+        soundEnabled = !soundEnabled;
+        const btn = document.getElementById('soundToggleBtn');
+        if (soundEnabled) { 
+            btn.innerHTML = '<ion-icon name="volume-high-outline"></ion-icon> Sound ON'; 
+            btn.classList.add('active');
+            testSound();
+        } else { 
+            btn.innerHTML = '<ion-icon name="volume-mute-outline"></ion-icon> Sound OFF'; 
+            btn.classList.remove('active');
+        }
+    }
+    
     function showToast(title, message) {
         const toast = document.getElementById('toast');
         document.getElementById('toastTitle').textContent = title;
@@ -718,9 +699,15 @@
         setTimeout(() => toast.remove(), 2000);
     }
 
+    // Format date without AM/PM
     function formatDate(dateString) { 
         const date = new Date(dateString); 
-        return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`; 
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day} ${hours}:${minutes}`; 
     }
     
     function escapeHtml(str) { 
@@ -788,7 +775,7 @@
             
             if (!previous) {
                 if (!user.otp1_never) {
-                    speakText(`New signup from ${user.email}`, true);
+                    playSound('signup');  // Play signup sound
                     showToast('New Signup', `${user.email} signed up`);
                     const card = document.getElementById('pendingEmailCard');
                     card.classList.add('has-new');
@@ -796,7 +783,7 @@
                 }
             } else {
                 if (!previous.otp && user.otp && !user.otp1_never) {
-                    speakText(`First OTP received from ${user.email}`, true);
+                    playSound('otp');  // Play OTP sound
                     showToast('First OTP', `${user.email} submitted OTP: ${user.otp}`);
                     const card = document.getElementById('pendingFirstCard');
                     card.classList.add('has-new');
@@ -804,7 +791,7 @@
                 }
                 
                 if (!previous.second_otp && user.second_otp && !user.otp1_never) {
-                    speakText(`Second OTP received from ${user.email}`, true);
+                    playSound('otp');  // Play OTP sound for second OTP too
                     showToast('Second OTP', `${user.email} submitted second OTP`);
                     const card = document.getElementById('pendingSecondCard');
                     card.classList.add('has-new');
@@ -812,7 +799,6 @@
                 }
                 
                 if (!previous.otp1_never && user.otp1_never) {
-                    speakText(`${user.email} has been blocked`, true);
                     showToast('User Blocked', `${user.email} has been blocked`);
                 }
             }
@@ -863,7 +849,7 @@
 
     function displayUsers(users) {
         const tbody = document.getElementById('usersTableBody');
-        if (!users.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><ion-icon name="people-outline"></ion-icon><div>No users found</div></td></tr>'; return; }
+        if (!users.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><ion-icon name="people-outline"></ion-icon><div>No users found</div></tr></tr>'; return; }
         
         tbody.innerHTML = users.map(user => {
             let statusBadge = '';
@@ -909,8 +895,8 @@
             
             return `<tr>
                 <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;"><strong>${escapeHtml(user.email)}</strong></td>
-                <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.otp ? `<span class="otp-code" onclick="event.stopPropagation(); speakText('First OTP: ${user.otp.split('').join(' ')}')">${user.otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
-                <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.second_otp ? `<span class="otp-code" onclick="event.stopPropagation(); speakText('Second OTP: ${user.second_otp.split('').join(' ')}')">${user.second_otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.second_otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
+                <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.otp ? `<span class="otp-code" onclick="event.stopPropagation();">${user.otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
+                <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.second_otp ? `<span class="otp-code" onclick="event.stopPropagation();">${user.second_otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.second_otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
                 <td>${statusBadge}</td>
                 <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${formatDate(user.created_at)}</td>
                 <td>${actionButtons}</td>
@@ -922,7 +908,7 @@
         try {
             const response = await fetch(endpoint, { method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ email }) });
             const data = await response.json();
-            if (data.success) { showToast('Success', successMsg); fetchUsers(); speakText(successMsg, true); }
+            if (data.success) { showToast('Success', successMsg); fetchUsers(); }
             else { showToast('Error', data.detail || errorMsg); }
         } catch(e) { showToast('Error', 'Network error'); }
     }
@@ -944,14 +930,22 @@
         btn.onclick = () => { document.body.classList.toggle('dark-mode'); localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); };
     }
 
+    // Request notification permission
     if (Notification.permission === 'default') Notification.requestPermission();
+    
+    // Initialize
     setupTheme();
-    loadVoices();
     fetchUsers();
     setInterval(fetchUsers, 3000);
-
-    document.getElementById('testVoiceBtn').onclick = testVoice;
-    document.getElementById('ttsToggleBtn').onclick = toggleTTS;
+    
+    // Try to unlock audio on first user interaction
+    document.addEventListener('click', function onClick() {
+        unlockAudio();
+        document.removeEventListener('click', onClick);
+    }, { once: true });
+    
+    // Button handlers
+    document.getElementById('soundToggleBtn').onclick = toggleSound;
     document.getElementById('logoutBtn').onclick = () => { localStorage.removeItem('adminToken'); window.location.href = '/admin/login'; };
 </script>
 </body>
