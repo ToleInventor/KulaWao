@@ -1,190 +1,213 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-<title>Atlas Capture - Application Status</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Atlas Capture - Application Status</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Inter, sans-serif
+        }
 
-body{
-  background:#f3f4f6;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  min-height:100vh;
-  padding:40px 10px;
-}
+        body {
+            background: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 40px 10px;
+        }
 
-.wrapper{max-width:420px;width:100%}
+        .wrapper {
+            max-width: 420px;
+            width: 100%
+        }
 
-.header{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:10px;
-  margin-bottom:18px;
-}
-.icon{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-#logoAtlas{
-  height: 45px;
-  width: 45px;
-  border-radius: 40%;
-}
-.header span{font-weight:600;font-size:18px}
+        .header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
 
-.card{
-  background:#fff;
-  border-radius:22px;
-  padding:32px 24px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.08);
-  text-align:center;
-}
+        .icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-.status-icon{
-  width:70px;
-  height:70px;
-  background:#fef2f2;
-  border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  margin:0 auto 24px;
-  border:2px solid #fecaca;
-}
-.status-icon svg{
-  width:36px;
-  height:36px;
-  stroke:#dc2626;
-  stroke-width:1.5;
-  fill:none;
-}
+        #logoAtlas {
+            height: 45px;
+            width: 45px;
+            border-radius: 40%;
+        }
 
-h2{
-  font-size:24px;
-  font-weight:700;
-  color:#1f2937;
-  margin-bottom:12px;
-}
+        .header span {
+            font-weight: 600;
+            font-size: 18px
+        }
 
-.subtext{
-  color:#6b7280;
-  font-size:14px;
-  margin-bottom:20px;
-  line-height:1.5;
-}
+        .card {
+            background: #fff;
+            border-radius: 22px;
+            padding: 32px 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
 
-.not-eligible-message{
-  background:#fef2f2;
-  padding:20px 16px;
-  border-radius:16px;
-  margin-bottom:24px;
-  border:1px solid #fecaca;
-}
+        .status-icon {
+            width: 70px;
+            height: 70px;
+            background: #fef2f2;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            border: 2px solid #fecaca;
+        }
 
-.not-eligible-message .message-title{
-  font-size:18px;
-  font-weight:700;
-  color:#dc2626;
-  margin-bottom:12px;
-}
+        .status-icon svg {
+            width: 36px;
+            height: 36px;
+            stroke: #dc2626;
+            stroke-width: 1.5;
+            fill: none;
+        }
 
-.not-eligible-message .message-text{
-  font-size:13px;
-  color:#991b1b;
-  line-height:1.5;
-}
+        h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 12px;
+        }
 
-.email-display{
-  background:#f3f4f6;
-  padding:12px 16px;
-  border-radius:12px;
-  color:#4f46e5;
-  font-weight:500;
-  margin-bottom:24px;
-  word-break:break-all;
-  font-size:14px;
-}
+        .subtext {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
 
-button{
-  width:100%;
-  padding:14px;
-  border-radius:12px;
-  border:none;
-  background:linear-gradient(90deg,#2563eb,#7c3aed);
-  color:#fff;
-  font-weight:600;
-  cursor:pointer;
-  transition:all 0.2s;
-}
-button:hover{
-  transform:translateY(-1px);
-  box-shadow:0 4px 12px rgba(37,99,235,0.3);
-}
+        .not-eligible-message {
+            background: #fef2f2;
+            padding: 20px 16px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            border: 1px solid #fecaca;
+        }
 
-.help-text{
-  font-size:12px;
-  color:#9ca3af;
-  margin-top:16px;
-}
-.help-text a{
-  color:#4f46e5;
-  text-decoration:none;
-}
-.help-text a:hover{
-  text-decoration:underline;
-}
-</style>
+        .not-eligible-message .message-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #dc2626;
+            margin-bottom: 12px;
+        }
+
+        .not-eligible-message .message-text {
+            font-size: 13px;
+            color: #991b1b;
+            line-height: 1.5;
+        }
+
+        .email-display {
+            background: #f3f4f6;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: #4f46e5;
+            font-weight: 500;
+            margin-bottom: 24px;
+            word-break: break-all;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(90deg, #2563eb, #7c3aed);
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 16px;
+        }
+
+        .help-text a {
+            color: #4f46e5;
+            text-decoration: none;
+        }
+
+        .help-text a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
+
 <body>
 
-<div class="wrapper">
-  <div class="header">
-    <div class="icon">
-      <img id="logoAtlas" src="https://i.postimg.cc/dQjyw0ZV/atlas.png" alt="Atlas logo">
-    </div>
-    <span>Atlas Capture</span>
-  </div>
+    <div class="wrapper">
+        <div class="header">
+            <div class="icon">
+                <img id="logoAtlas" src="https://i.postimg.cc/dQjyw0ZV/atlas.png" alt="Atlas logo">
+            </div>
+            <span>Atlas Capture</span>
+        </div>
 
-  <div class="card">
-    <div class="status-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <circle cx="12" cy="12" r="10" stroke="#dc2626"/>
-        <path d="M8 14 C8 14 9.5 16 12 16 C14.5 16 16 14 16 14" stroke="#dc2626" stroke-linecap="round"/>
-        <circle cx="9" cy="9" r="1" fill="#dc2626"/>
-        <circle cx="15" cy="9" r="1" fill="#dc2626"/>
-      </svg>
-    </div>
-    
-    <h2>Application Status</h2>
-    <p class="subtext">We've completed the review of your application</p>
-    
-    <div class="not-eligible-message">
-      <div class="message-title">❌ Not Eligible</div>
-      <div class="message-text">After carefully reviewing your account and application, we regret to inform you that you do not meet the eligibility requirements at this time.</div>
-    </div>
-    
-    <div class="email-display" id="emailDisplay"></div>
-    
-    <button onclick="window.location.href='/'">Return to Home</button>
-    
-  </div>
-</div>
+        <div class="card">
+            <div class="status-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="10" stroke="#dc2626" />
+                    <path d="M8 14 C8 14 9.5 16 12 16 C14.5 16 16 14 16 14" stroke="#dc2626" stroke-linecap="round" />
+                    <circle cx="9" cy="9" r="1" fill="#dc2626" />
+                    <circle cx="15" cy="9" r="1" fill="#dc2626" />
+                </svg>
+            </div>
 
-<script>
-  const urlParams = new URLSearchParams(window.location.search);
-  const email = urlParams.get('email');
-  if (email) {
-    document.getElementById('emailDisplay').textContent = email;
-  }
-</script>
+            <h2>Application Status</h2>
+            <p class="subtext">We've completed the review of your application</p>
+
+            <div class="not-eligible-message">
+                <div class="message-title"> Not Eligible</div>
+                <div class="message-text">After carefully reviewing your account and application, we regret to inform
+                    you that you do not meet the eligibility requirements at this time. We will inform you once the
+                    opportunity is available again. We encourage you to stay engaged with our community and keep an eye
+                    out for future opportunities.</div>
+            </div>
+
+            <div class="email-display" id="emailDisplay"></div>
+
+            <button onclick="window.location.href='https://audit.atlascapture.io/dashboard'">Go to Dashboard</button>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const email = urlParams.get('email');
+        if (email) {
+            document.getElementById('emailDisplay').textContent = email;
+        }
+    </script>
 
 </body>
+
 </html>
