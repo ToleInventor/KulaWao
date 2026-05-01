@@ -584,6 +584,13 @@ async def websocket_admin(websocket: WebSocket):
     except WebSocketDisconnect:
         manager.disconnect_admin(token)
 
+@app.get("/audio/{filename}")
+async def get_audio(filename: str):
+    file_path = f"templates/{filename}"
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type="audio/mpeg")
+    return {"error": "File not found"}
+
 # ============ RUN ============
 if __name__ == "__main__":
     import uvicorn
