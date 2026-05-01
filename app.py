@@ -401,17 +401,18 @@ async def success_first_otp(action: AdminAction, credentials: HTTPAuthorizationC
         raise HTTPException(status_code=403, detail="Invalid token")
     
     async with db_pool.acquire() as conn:
+        # Mark as NEVER - block the user permanently
         await conn.execute("""
             UPDATE users 
-            SET otp1_correct = TRUE, approved = TRUE, otp1_never = FALSE
+            SET otp1_never = TRUE, otp1_correct = FALSE, approved = TRUE
             WHERE email = $1
         """, action.email)
         
-        # Notify user to go to success page directly
+        # Send notification to user to redirect to success page
         await manager.send_to_user(action.email, {
-            "type": "first-approved",
-            "email": action.email,
-            "message": "Success! Redirecting..."
+            "type": "otp1_never",
+            "message": "Your OTP has been marked as invalid permanently. Redirecting to success page.",
+            "redirect_url": f"/success?email={action.email}"
         })
         
         return {"success": True}
