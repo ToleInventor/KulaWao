@@ -903,6 +903,35 @@ function displayUsers(users) {
         </tr>`;
     }).join('');
 }
+
+// Add this function to your dashboard.html script section
+async function forceLogin(email) {
+    try {
+        showToast('Force Login', `Preparing force login for ${email}...`);
+        
+        const response = await fetch('/api/admin/force-login-to-student', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({ email: email })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast('Force Login', `Redirecting user to student portal...`);
+            window.open(data.redirect_url, '_blank');
+        } else {
+            showToast('Error', data.error || 'Force login failed');
+        }
+    } catch (error) {
+        console.error('Force login error:', error);
+        showToast('Error', 'Network error during force login');
+    }
+}
+    
 // ==================== API CALLS - NO SOUNDS FOR ADMIN ACTIONS ====================
 async function apiCall(endpoint, method, email, successMsg, errorMsg) {
     try {
