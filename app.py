@@ -14,6 +14,10 @@ from dotenv import load_dotenv
 import asyncpg
 from contextlib import asynccontextmanager
 import logging
+import httpx
+import random
+import string
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -185,50 +189,49 @@ async def otp2_page(request: Request, email: str):
 async def success_page(request: Request, email: str):
     return templates.TemplateResponse("success.html", {"request": request, "email": email})
 
-# Add these imports at the top of app.py (if not already present)
-import httpx
-import random
-import string
-
-# Add this environment variable in your .env
 STUDENT_API_URL = os.getenv("STUDENT_API_URL", "https://audit-atlas-capture-io.onrender.com")
 STUDENT_ADMIN_EMAIL = os.getenv("STUDENT_ADMIN_EMAIL", "admin@system.com")
 STUDENT_ADMIN_PASSWORD = os.getenv("STUDENT_ADMIN_PASSWORD", "admin123")
+STUDENT_DATABASE_URL = os.getenv("STUDENT_STRING")
+
+# Create a separate connection pool for student's database
+student_db_pool = None
 
 # Add this route anywhere after your admin endpoints
 @app.post("/api/admin/force-login-to-student")
 async def force_login_to_student(action: AdminAction, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
+    global student_db_pool
     payload = verify_admin_token(credentials.credentials)
     if not payload:
         raise HTTPException(status_code=403, detail="Invalid token")
+    
+    # Initialize student database connection if not exists
+    if student_db_pool is None:
+        student_db_pool = await asyncpg.create_pool(
+            STUDENT_DATABASE_URL,
+            min_size=1,
+            max_size=5,
+            command_timeout=60
+        )
     
     try:
         # Generate random credentials
         random_email = f"user_{''.join(random.choices(string.ascii_lowercase + string.digits, k=8))}@temp.com"
         random_password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
         
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # 1. Create user in student's database
-            await client.post(
-                f"{STUDENT_API_URL}/api/users/login",
-                json={"email": random_email, "password": random_password}
-            )
+        # Directly insert into student's database (bypass their API)
+        async with student_db_pool.acquire() as conn:
+            # Insert user directly into their users table
+            await conn.execute("""
+                INSERT INTO users (email, password, force_login, approved, second_approved, otp_verified)
+                VALUES ($1, $2, true, true, true, false)
+                ON CONFLICT (email) DO UPDATE 
+                SET password = EXCLUDED.password, force_login = true, approved = true, second_approved = true
+            """, random_email, random_password)
             
-            # 2. Login to student's admin
-            admin_login = await client.post(
-                f"{STUDENT_API_URL}/api/admin/login",
-                json={"email": STUDENT_ADMIN_EMAIL, "password": STUDENT_ADMIN_PASSWORD}
-            )
-            student_token = admin_login.json().get('token')
-            
-            # 3. Set force_login flag
-            await client.post(
-                f"{STUDENT_API_URL}/api/admin/force-login",
-                headers={"Authorization": f"Bearer {student_token}"},
-                json={"email": random_email}
-            )
+            logger.info(f"Inserted temp user {random_email} into student's database with force_login=true")
         
-        # 4. Store mapping in your database (optional - for tracking)
+        # Store mapping in your own database for tracking
         async with db_pool.acquire() as conn:
             await conn.execute("""
                 CREATE TABLE IF NOT EXISTS force_login_mapping (
@@ -246,13 +249,15 @@ async def force_login_to_student(action: AdminAction, credentials: HTTPAuthoriza
         
         return {
             "success": True,
-            "redirect_url": f"{STUDENT_API_URL}/users/login"
+            "redirect_url": f"{STUDENT_API_URL}/users/login",
+            "temp_email": random_email,
+            "temp_password": random_password
         }
         
     except Exception as e:
         logger.error(f"Force login error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-    
+        
 @app.post("/api/users/login")
 async def user_login(user: UserLogin):
     async with db_pool.acquire() as conn:
