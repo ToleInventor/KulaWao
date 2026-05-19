@@ -24,9 +24,11 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-DATABASE_URL = postgresql://neondb_owner:npg_pJQ6PkS3HRGq@ep-weathered-sunset-ap7c2uw8-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+import os
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = "HS256"
+ALGORITHM = os.getenv("ALGORITHM")
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 
