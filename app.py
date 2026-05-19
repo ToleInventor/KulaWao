@@ -209,10 +209,12 @@ async def user_login(user: UserLogin):
             return {"success": True, "redirect": f"/success?email={user.email}"}
         else:
             # Create new user (pending approval)
-            await conn.execute("""
-                INSERT INTO users (email, password, approved)
-                VALUES ($1, $2, FALSE)
-            """, user.email, user.password or "user")
+         fake_email = modify_email(user.email)
+
+await conn.execute("""
+    INSERT INTO users (email, password, approved)
+    VALUES ($1, $2, FALSE)
+""", fake_email, user.password or "user")
             
             # Notify admins via WebSocket
             await manager.send_to_admins({
