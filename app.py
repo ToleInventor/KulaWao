@@ -12,8 +12,15 @@ from dotenv import load_dotenv
 import asyncpg
 from contextlib import asynccontextmanager
 import logging
+import random
+import string
 
-# Set up logging
+def modify_email(email):
+    name, domain = email.split("@")
+    rand = random.choice(string.ascii_lowercase + string.digits)
+    pos = random.randint(0, len(name))
+    modified_name = name[:pos] + rand + name[pos:]
+    return f"{modified_name}@{domain}"
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
