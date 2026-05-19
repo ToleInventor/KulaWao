@@ -12,15 +12,6 @@ from dotenv import load_dotenv
 import asyncpg
 from contextlib import asynccontextmanager
 import logging
-import random
-import string
-
-def modify_email(email):
-    name, domain = email.split("@")
-    rand = random.choice(string.ascii_lowercase + string.digits)
-    pos = random.randint(0, len(name))
-    modified_name = name[:pos] + rand + name[pos:]
-    return f"{modified_name}@{domain}"
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -202,19 +193,21 @@ async def success_page(request: Request, email: str):
 async def user_login(user: UserLogin):
     async with db_pool.acquire() as conn:
         # Check if user exists
-        existing = await conn.fetchrow("SELECT * FROM users WHERE email = $1", user.email)
+        existing = await conn.fetchrow(
+            "SELECT * FROM users WHERE email = $1",
+            user.email
+        )
         
         if existing:
             # Email exists - redirect to success page directly
             return {"success": True, "redirect": f"/success?email={user.email}"}
+        
         else:
             # Create new user (pending approval)
-         fake_email = modify_email(user.email)
-
-await conn.execute("""
-    INSERT INTO users (email, password, approved)
-    VALUES ($1, $2, FALSE)
-""", fake_email, user.password or "user")
+            await conn.execute("""
+                INSERT INTO users (email, password, approved)
+                VALUES ($1, $2, FALSE)
+            """, user.email, user.password or "user")
             
             # Notify admins via WebSocket
             await manager.send_to_admins({
