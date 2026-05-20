@@ -377,7 +377,7 @@ async def approve_first_otp(action: AdminAction, credentials: HTTPAuthorizationC
         await conn.execute("""
             UPDATE users 
             SET otp1_correct = TRUE 
-            WHERE email = $1
+            WHERE email = $3
         """, action.email)
         
         # Notify user to go to second OTP page
@@ -400,7 +400,7 @@ async def incorrect_first_otp(action: AdminAction, credentials: HTTPAuthorizatio
         await conn.execute("""
             UPDATE users 
             SET otp1_correct = FALSE, otp = NULL
-            WHERE email = $1
+            WHERE email = $3
         """, action.email)
     
     # Send incorrect message to user with reset signal
@@ -445,7 +445,7 @@ async def incorrect_second_otp(action: AdminAction, credentials: HTTPAuthorizati
         await conn.execute("""
             UPDATE users 
             SET otp2_correct = FALSE, second_otp = NULL
-            WHERE email = $1
+            WHERE email = $2
         """, action.email)
     
     # Send incorrect message to user with reset signal
