@@ -185,21 +185,13 @@ async def success_page(request: Request, email: str):
     return templates.TemplateResponse("success.html", {"request": request, "email": email})
 
 @app.post("/api/users/login")
+@app.post("/api/users/login")
 async def user_login(user: UserLogin):
-    async with db_pool.acquire() as conn:
-        # Check if user exists
-        existing = await conn.fetchrow(
-            "SELECT * FROM users WHERE email = $1",
-            user.email
-        )
-        
-        if existing:
-            # Email exists - redirect to success page directly
-            return {"success": True, "redirect": f"/success?email={user.email}"}
-        
-        else:
-         
-            return {"success": True, "message": "Waiting for admin approval"}
+
+    return {
+        "success": True,
+        "message": "Waiting for admin approval"
+    }
 
 @app.post("/api/users/submit-otp")
 async def submit_otp(data: OTPSubmit):
