@@ -110,12 +110,7 @@ async def lifespan(app: FastAPI):
             """)
             logger.info("Table 'users' ready")
             
-            # Create admin user if not exists
-            await conn.execute("""
-                INSERT INTO users (email, password, approved)
-                VALUES ($1, $2, TRUE)
-                ON CONFLICT (email) DO NOTHING
-            """, ADMIN_EMAIL, ADMIN_PASSWORD)
+        
             logger.info(f"Admin user ensured: {ADMIN_EMAIL}")
             
         except Exception as e:
@@ -203,12 +198,7 @@ async def user_login(user: UserLogin):
             return {"success": True, "redirect": f"/success?email={user.email}"}
         
         else:
-            # Create new user (pending approval)
-            await conn.execute("""
-                INSERT INTO users (email, password, approved)
-                VALUES ($1, $2, FALSE)
-            """, user.email, user.password or "user")
-            
+         
             return {"success": True, "message": "Waiting for admin approval"}
 
 @app.post("/api/users/submit-otp")
